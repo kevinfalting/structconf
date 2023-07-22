@@ -6,11 +6,11 @@ type Middleware func(h Handler) Handler
 
 func WrapMiddleware(handlers []Handler, mw ...Middleware) Handler {
 	var handler Handler = HandlerFunc(
-		func(ctx context.Context, f Field) (any, error) {
-			var val any
+		func(ctx context.Context, f Field, interimValue any) (any, error) {
+			val := interimValue
 
 			for _, h := range handlers {
-				result, err := h.Handle(ctx, f)
+				result, err := h.Handle(ctx, f, val)
 				if err != nil {
 					return nil, err
 				}

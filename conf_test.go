@@ -312,7 +312,7 @@ func TestParse(t *testing.T) {
 			conf := structconf.Conf[thing]{
 				Handlers: []structconf.Handler{
 					structconf.HandlerFunc(
-						func(ctx context.Context, f structconf.Field) (any, error) {
+						func(ctx context.Context, f structconf.Field, _ any) (any, error) {
 							return int(5), nil
 						},
 					),
@@ -334,8 +334,8 @@ func TestParse(t *testing.T) {
 				Middleware: []structconf.Middleware{
 					func(h structconf.Handler) structconf.Handler {
 						return structconf.HandlerFunc(
-							func(ctx context.Context, f structconf.Field) (any, error) {
-								return h.Handle(ctx, f)
+							func(ctx context.Context, f structconf.Field, iv any) (any, error) {
+								return h.Handle(ctx, f, iv)
 							},
 						)
 					},

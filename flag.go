@@ -105,7 +105,7 @@ func NewFlag[T any](fset *flag.FlagSet) *Flag {
 
 var _ Handler = (*Flag)(nil)
 
-func (f *Flag) Handle(ctx context.Context, field Field) (any, error) {
+func (f *Flag) Handle(ctx context.Context, field Field, _ any) (any, error) {
 	flagName, ok := field.LookupTag("conf", "flag")
 	if !ok {
 		return nil, nil

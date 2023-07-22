@@ -29,7 +29,7 @@ func TestEnvironmentVariable(t *testing.T) {
 
 		var ev structconf.EnvironmentVariable
 
-		result, err := ev.Handle(context.Background(), fields[0])
+		result, err := ev.Handle(context.Background(), fields[0], nil)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -57,7 +57,7 @@ func TestEnvironmentVariable(t *testing.T) {
 
 		var ev structconf.EnvironmentVariable
 
-		result, err := ev.Handle(context.Background(), fields[0])
+		result, err := ev.Handle(context.Background(), fields[0], nil)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -83,7 +83,7 @@ func TestEnvironmentVariable(t *testing.T) {
 
 		var ev structconf.EnvironmentVariable
 
-		result, err := ev.Handle(context.Background(), fields[0])
+		result, err := ev.Handle(context.Background(), fields[0], nil)
 		if err == nil {
 			t.Errorf("expected error, got %v", err)
 		}
@@ -109,7 +109,7 @@ func TestEnvironmentVariable(t *testing.T) {
 
 		var ev structconf.EnvironmentVariable
 
-		result, err := ev.Handle(context.Background(), fields[0])
+		result, err := ev.Handle(context.Background(), fields[0], nil)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}

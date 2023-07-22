@@ -24,14 +24,14 @@ func TestDefault(t *testing.T) {
 		}
 
 		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field) (any, error) {
+			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
 				return nil, nil
 			},
 		)
 
 		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
 
-		result, err := h.Handle(context.Background(), fields[0])
+		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err == nil {
 			t.Errorf("expected error, got %v", err)
 		}
@@ -54,14 +54,14 @@ func TestDefault(t *testing.T) {
 		}
 
 		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field) (any, error) {
+			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
 				return nil, nil
 			},
 		)
 
 		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
 
-		result, err := h.Handle(context.Background(), fields[0])
+		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -84,14 +84,14 @@ func TestDefault(t *testing.T) {
 		}
 
 		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field) (any, error) {
+			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
 				return nil, errors.New("i'm an error")
 			},
 		)
 
 		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
 
-		result, err := h.Handle(context.Background(), fields[0])
+		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err == nil {
 			t.Errorf("expected error, got %v", err)
 		}
@@ -116,14 +116,14 @@ func TestDefault(t *testing.T) {
 		}
 
 		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field) (any, error) {
+			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
 				return nil, nil
 			},
 		)
 
 		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
 
-		result, err := h.Handle(context.Background(), fields[0])
+		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -146,14 +146,14 @@ func TestDefault(t *testing.T) {
 		}
 
 		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field) (any, error) {
+			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
 				return 88, nil
 			},
 		)
 
 		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
 
-		result, err := h.Handle(context.Background(), fields[0])
+		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}

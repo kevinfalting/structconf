@@ -11,7 +11,7 @@ type EnvironmentVariable struct{}
 
 var _ Handler = EnvironmentVariable{}
 
-func (ev EnvironmentVariable) Handle(ctx context.Context, field Field) (any, error) {
+func (ev EnvironmentVariable) Handle(ctx context.Context, field Field, _ any) (any, error) {
 	environmentVariable, ok := field.LookupTag("conf", "env")
 	if !ok {
 		return nil, nil

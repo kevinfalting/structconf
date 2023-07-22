@@ -40,9 +40,9 @@ func New[T any](opts ...confOptionFunc) *Conf[T] {
 
 // Handle will call all of the configured middleware and handlers on a single
 // field.
-func (c *Conf[T]) Handle(ctx context.Context, field Field) (any, error) {
+func (c *Conf[T]) Handle(ctx context.Context, field Field, interimValue any) (any, error) {
 	h := WrapMiddleware(c.Handlers, c.Middleware...)
-	return h.Handle(ctx, field)
+	return h.Handle(ctx, field, interimValue)
 }
 
 // SettableFields returns a slice of all settable struct fields in the provided
@@ -145,7 +145,7 @@ func (c *Conf[T]) Parse(ctx context.Context, cfg *T) error {
 	}
 
 	for _, field := range fields {
-		val, err := c.Handle(ctx, field)
+		val, err := c.Handle(ctx, field, nil)
 		if err != nil {
 			return err
 		}

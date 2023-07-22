@@ -29,7 +29,7 @@ func TestFlags(t *testing.T) {
 		t.Errorf("expected no error, got %v", err)
 	}
 
-	result, err := flagsHandler.Handle(context.Background(), fields[0])
+	result, err := flagsHandler.Handle(context.Background(), fields[0], nil)
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)
 	}

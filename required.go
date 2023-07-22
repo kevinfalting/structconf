@@ -11,8 +11,8 @@ import (
 func Required() Middleware {
 	return func(h Handler) Handler {
 		return HandlerFunc(
-			func(ctx context.Context, f Field) (any, error) {
-				result, err := h.Handle(ctx, f)
+			func(ctx context.Context, f Field, interimValue any) (any, error) {
+				result, err := h.Handle(ctx, f, interimValue)
 				if err != nil {
 					return nil, err
 				}
