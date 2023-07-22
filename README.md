@@ -16,10 +16,11 @@ Built in handlers and middleware support the following comma separated struct ta
 | `flag` | `flag:app-name` | defines the command line flag to lookup the value. |
 | `default` | `default:the app name` | defines the default value for the field. |
 | `required` | `required` | defines whether the field is required or not. No value necessary. |
+| `secret` | `secret` | defines whether the field is a secret or not. If present, it is interpreted as true. No value necessary. This currently only works for string type fields, other types will fail. |
 
 ```go
 type Config struct {
-    Name `conf:"env:APP_NAME,flag:app-name,default:the app name,required"`
+    Name `conf:"env:APP_NAME,flag:app-name,default:the app name,required,secret"`
 }
 ```
 

@@ -25,7 +25,7 @@ func New[T any](opts ...confOptionFunc) *Conf[T] {
 		opt(&confOpt)
 	}
 
-	return &Conf[T]{
+	conf := Conf[T]{
 		Handlers: []Handler{
 			EnvironmentVariable{},
 			NewFlag[T](confOpt.flagSet),
@@ -36,6 +36,15 @@ func New[T any](opts ...confOptionFunc) *Conf[T] {
 			Default(),
 		},
 	}
+
+	if confOpt.rsaPrivateKey != nil {
+		conf.Handlers = append(conf.Handlers, &RSAHandler{
+			PrivateKey: confOpt.rsaPrivateKey,
+			Label:      confOpt.rsaLabel,
+		})
+	}
+
+	return &conf
 }
 
 // Handle will call all of the configured middleware and handlers on a single
