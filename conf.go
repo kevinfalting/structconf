@@ -19,16 +19,21 @@ var _ Handler = (*Conf[any])(nil)
 
 // New returns a Conf initialized with all of the default Handlers and
 // Middleware to parse a struct.
-func New[T any](opts ...confOptionFunc) *Conf[T] {
+func New[T any](opts ...confOptionFunc) (*Conf[T], error) {
 	var confOpt confOption
 	for _, opt := range opts {
 		opt(&confOpt)
 	}
 
+	flagHandler, err := NewFlag[T](confOpt.flagSet)
+	if err != nil {
+		return nil, err
+	}
+
 	conf := Conf[T]{
 		Handlers: []Handler{
 			EnvironmentVariable{},
-			NewFlag[T](confOpt.flagSet),
+			flagHandler,
 		},
 
 		Middleware: []Middleware{
@@ -44,7 +49,7 @@ func New[T any](opts ...confOptionFunc) *Conf[T] {
 		})
 	}
 
-	return &conf
+	return &conf, nil
 }
 
 // Handle will call all of the configured middleware and handlers on a single

@@ -23,7 +23,11 @@ func TestFlags(t *testing.T) {
 		t.Fatalf("expected 1 field, got %d", len(fields))
 	}
 
-	flagsHandler := structconf.NewFlag[A](nil)
+	flagsHandler, err := structconf.NewFlag[A](nil)
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
 	err = flagsHandler.Parse("-int", "5")
 	if err != nil {
 		t.Errorf("expected no error, got %v", err)

@@ -356,7 +356,10 @@ func TestParse(t *testing.T) {
 				Int int `conf:"env:NAME"`
 			}
 
-			conf := structconf.New[A]()
+			conf, err := structconf.New[A]()
+			if err != nil {
+				t.Fatalf("failed to get a new conf: %v", err)
+			}
 
 			t.Setenv("NAME", "22")
 
@@ -364,8 +367,7 @@ func TestParse(t *testing.T) {
 				Int: 88,
 			}
 
-			err := conf.Parse(ctx, &a)
-			if err != nil {
+			if err := conf.Parse(ctx, &a); err != nil {
 				t.Errorf("expected no error, got %v", err)
 			}
 
@@ -379,14 +381,16 @@ func TestParse(t *testing.T) {
 				Int int `conf:"env:NAME"`
 			}
 
-			conf := structconf.New[A]()
+			conf, err := structconf.New[A]()
+			if err != nil {
+				t.Fatalf("failed to get a new conf: %v", err)
+			}
 
 			a := A{
 				Int: 88,
 			}
 
-			err := conf.Parse(ctx, &a)
-			if err != nil {
+			if err := conf.Parse(ctx, &a); err != nil {
 				t.Errorf("expected no error, got %v", err)
 			}
 
@@ -400,7 +404,10 @@ func TestParse(t *testing.T) {
 				Int int `conf:"env:NAME,required"`
 			}
 
-			conf := structconf.New[A]()
+			conf, err := structconf.New[A]()
+			if err != nil {
+				t.Fatalf("failed to get a new conf: %v", err)
+			}
 
 			t.Run("set env val", func(t *testing.T) {
 				t.Setenv("NAME", "5")
@@ -444,13 +451,16 @@ func TestParse(t *testing.T) {
 				t.Setenv("INT", "22")
 
 				fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-				conf := structconf.New[A](structconf.WithFlagSet(fset))
+				conf, err := structconf.New[A](structconf.WithFlagSet(fset))
+				if err != nil {
+					t.Fatalf("failed to get a new conf: %v", err)
+				}
+
 				if err := fset.Parse(nil); err != nil {
 					t.Fatalf("failed to Parse flagset: %v", err)
 				}
 
-				err := conf.Parse(context.Background(), &a)
-				if err != nil {
+				if err := conf.Parse(context.Background(), &a); err != nil {
 					t.Errorf("expected no error, got %v", err)
 				}
 
@@ -462,13 +472,16 @@ func TestParse(t *testing.T) {
 				var a A
 
 				fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-				conf := structconf.New[A](structconf.WithFlagSet(fset))
+				conf, err := structconf.New[A](structconf.WithFlagSet(fset))
+				if err != nil {
+					t.Fatalf("failed to get a new conf: %v", err)
+				}
+
 				if err := fset.Parse([]string{"-int", "22"}); err != nil {
 					t.Fatalf("failed to Parse flagset: %v", err)
 				}
 
-				err := conf.Parse(context.Background(), &a)
-				if err != nil {
+				if err := conf.Parse(context.Background(), &a); err != nil {
 					t.Errorf("expected no error, got %v", err)
 				}
 
@@ -482,13 +495,16 @@ func TestParse(t *testing.T) {
 				t.Setenv("INT", "456")
 
 				fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-				conf := structconf.New[A](structconf.WithFlagSet(fset))
+				conf, err := structconf.New[A](structconf.WithFlagSet(fset))
+				if err != nil {
+					t.Fatalf("failed to get a new conf: %v", err)
+				}
+
 				if err := fset.Parse([]string{"-int", "22"}); err != nil {
 					t.Fatalf("failed to Parse flagset: %v", err)
 				}
 
-				err := conf.Parse(context.Background(), &a)
-				if err != nil {
+				if err := conf.Parse(context.Background(), &a); err != nil {
 					t.Errorf("expected no error, got %v", err)
 				}
 
@@ -500,13 +516,16 @@ func TestParse(t *testing.T) {
 				var a A
 
 				fset := flag.NewFlagSet(t.Name(), flag.ContinueOnError)
-				conf := structconf.New[A](structconf.WithFlagSet(fset))
+				conf, err := structconf.New[A](structconf.WithFlagSet(fset))
+				if err != nil {
+					t.Fatalf("failed to get a new conf: %v", err)
+				}
+
 				if err := fset.Parse(nil); err != nil {
 					t.Fatalf("failed to Parse flagset: %v", err)
 				}
 
-				err := conf.Parse(context.Background(), &a)
-				if err != nil {
+				if err := conf.Parse(context.Background(), &a); err != nil {
 					t.Errorf("expected no error, got %v", err)
 				}
 

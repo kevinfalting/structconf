@@ -15,7 +15,7 @@ type Flag struct {
 }
 
 // NewFlag returns an initialized Flag handler.
-func NewFlag[T any](fset *flag.FlagSet) *Flag {
+func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 	if fset == nil {
 		fset = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	}
@@ -24,7 +24,7 @@ func NewFlag[T any](fset *flag.FlagSet) *Flag {
 
 	fields, err := SettableFields(a)
 	if err != nil {
-		panic(err)
+		return nil, err
 	}
 
 	parsedFlags := make(map[string]func() any)
@@ -52,43 +52,64 @@ func NewFlag[T any](fset *flag.FlagSet) *Flag {
 		switch field.Kind() {
 		case reflect.Bool:
 			var b bool
-			db := defaultValFn[bool](field)
+			db, err := defaultValFn[bool](field)
+			if err != nil {
+				return nil, err
+			}
 			fset.BoolVar(&b, flagName, db, usage)
 			parsedFlags[flagName] = func() any { return valueFn[bool](b, db) }
 
 		case reflect.Float64:
 			var f float64
-			df := defaultValFn[float64](field)
+			df, err := defaultValFn[float64](field)
+			if err != nil {
+				return nil, err
+			}
 			fset.Float64Var(&f, flagName, df, usage)
 			parsedFlags[flagName] = func() any { return valueFn[float64](f, df) }
 
 		case reflect.Int64:
 			var i int64
-			di := defaultValFn[int64](field)
+			di, err := defaultValFn[int64](field)
+			if err != nil {
+				return nil, err
+			}
 			fset.Int64Var(&i, flagName, di, usage)
 			parsedFlags[flagName] = func() any { return valueFn[int64](i, di) }
 
 		case reflect.Int:
 			var i int
-			di := defaultValFn[int](field)
-			fset.IntVar(&i, flagName, defaultValFn[int](field), usage)
+			di, err := defaultValFn[int](field)
+			if err != nil {
+				return nil, err
+			}
+			fset.IntVar(&i, flagName, di, usage)
 			parsedFlags[flagName] = func() any { return valueFn[int](i, di) }
 
 		case reflect.String:
 			var s string
-			ds := defaultValFn[string](field)
+			ds, err := defaultValFn[string](field)
+			if err != nil {
+				return nil, err
+			}
 			fset.StringVar(&s, flagName, ds, usage)
 			parsedFlags[flagName] = func() any { return valueFn[string](s, ds) }
 
 		case reflect.Uint64:
 			var u uint64
-			du := defaultValFn[uint64](field)
+			du, err := defaultValFn[uint64](field)
+			if err != nil {
+				return nil, err
+			}
 			fset.Uint64Var(&u, flagName, du, usage)
 			parsedFlags[flagName] = func() any { return valueFn[uint64](u, du) }
 
 		case reflect.Uint:
 			var u uint
-			du := defaultValFn[uint](field)
+			du, err := defaultValFn[uint](field)
+			if err != nil {
+				return nil, err
+			}
 			fset.UintVar(&u, flagName, du, usage)
 			parsedFlags[flagName] = func() any { return valueFn[uint](u, du) }
 
@@ -97,10 +118,12 @@ func NewFlag[T any](fset *flag.FlagSet) *Flag {
 		}
 	}
 
-	return &Flag{
+	f := Flag{
 		flagSet:     fset,
 		parsedFlags: parsedFlags,
 	}
+
+	return &f, nil
 }
 
 var _ Handler = (*Flag)(nil)
@@ -138,22 +161,22 @@ func (f *Flag) Parse(args ...string) error {
 	return f.flagSet.Parse(args)
 }
 
-func defaultValFn[T any](f Field) T {
+func defaultValFn[T any](f Field) (T, error) {
 	defaultVal, ok := f.LookupTag("conf", "default")
 	if !ok {
-		return *new(T)
+		return *new(T), nil
 	}
 
 	result, err := parseStringForKind(defaultVal, f.Kind())
 	if err != nil {
-		panic(err)
+		return *new(T), nil
 	}
 
 	if _, ok := result.(T); !ok {
-		panic(fmt.Errorf("value of type %T is not %T", result, *new(T)))
+		return *new(T), fmt.Errorf("value of type %T is not %T", result, *new(T))
 	}
 
-	return result.(T)
+	return result.(T), nil
 }
 
 func valueFn[T comparable](parsedVal, defaultVal T) any {
