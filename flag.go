@@ -29,7 +29,7 @@ func NewFlag[T any](fset *flag.FlagSet) *Flag {
 
 	parsedFlags := make(map[string]func() any)
 
-	fn := func(flagName string, kind reflect.Kind) func(string) error {
+	parseFlagValueFn := func(flagName string, kind reflect.Kind) func(string) error {
 		return func(s string) error {
 			val, err := parseStringForKind(s, kind)
 			if err != nil {
@@ -93,7 +93,7 @@ func NewFlag[T any](fset *flag.FlagSet) *Flag {
 			parsedFlags[flagName] = func() any { return valueFn[uint](u, du) }
 
 		default:
-			fset.Func(flagName, usage, fn(flagName, field.Kind()))
+			fset.Func(flagName, usage, parseFlagValueFn(flagName, field.Kind()))
 		}
 	}
 
