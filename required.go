@@ -6,8 +6,8 @@ import (
 	"reflect"
 )
 
-// Required is a middleware that will a value to be set. Zero values are allowed
-// when returned from handlers.
+// Required is a middleware that will require a value to be set. Zero values are
+// allowed when returned from handlers.
 func Required() Middleware {
 	return func(h Handler) Handler {
 		return HandlerFunc(
