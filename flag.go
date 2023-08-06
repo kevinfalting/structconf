@@ -57,7 +57,7 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 				return nil, err
 			}
 			fset.BoolVar(&b, flagName, db, usage)
-			parsedFlags[flagName] = func() any { return valueFn[bool](b, db) }
+			parsedFlags[flagName] = func() any { return b }
 
 		case reflect.Float64:
 			var f float64
@@ -66,7 +66,7 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 				return nil, err
 			}
 			fset.Float64Var(&f, flagName, df, usage)
-			parsedFlags[flagName] = func() any { return valueFn[float64](f, df) }
+			parsedFlags[flagName] = func() any { return f }
 
 		case reflect.Int64:
 			var i int64
@@ -75,7 +75,7 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 				return nil, err
 			}
 			fset.Int64Var(&i, flagName, di, usage)
-			parsedFlags[flagName] = func() any { return valueFn[int64](i, di) }
+			parsedFlags[flagName] = func() any { return i }
 
 		case reflect.Int:
 			var i int
@@ -84,7 +84,7 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 				return nil, err
 			}
 			fset.IntVar(&i, flagName, di, usage)
-			parsedFlags[flagName] = func() any { return valueFn[int](i, di) }
+			parsedFlags[flagName] = func() any { return i }
 
 		case reflect.String:
 			var s string
@@ -93,7 +93,7 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 				return nil, err
 			}
 			fset.StringVar(&s, flagName, ds, usage)
-			parsedFlags[flagName] = func() any { return valueFn[string](s, ds) }
+			parsedFlags[flagName] = func() any { return s }
 
 		case reflect.Uint64:
 			var u uint64
@@ -102,7 +102,7 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 				return nil, err
 			}
 			fset.Uint64Var(&u, flagName, du, usage)
-			parsedFlags[flagName] = func() any { return valueFn[uint64](u, du) }
+			parsedFlags[flagName] = func() any { return u }
 
 		case reflect.Uint:
 			var u uint
@@ -111,7 +111,7 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 				return nil, err
 			}
 			fset.UintVar(&u, flagName, du, usage)
-			parsedFlags[flagName] = func() any { return valueFn[uint](u, du) }
+			parsedFlags[flagName] = func() any { return u }
 
 		default:
 			fset.Func(flagName, usage, parseFlagValueFn(flagName, field.Kind()))
@@ -150,15 +150,31 @@ func (f *Flag) Handle(ctx context.Context, field Field, _ any) (any, error) {
 // provided, it will use os.Args. This is safe to call multiple times, first call
 // wins.
 func (f *Flag) Parse(args ...string) error {
-	if f.flagSet.Parsed() {
-		return nil
+	if !f.flagSet.Parsed() {
+		if len(args) == 0 {
+			args = os.Args[1:]
+		}
+
+		if err := f.flagSet.Parse(args); err != nil {
+			return err
+		}
 	}
 
-	if len(args) == 0 {
-		args = os.Args[1:]
+	// TODO: This is called on every call to Handle, which isn't necessary. But,
+	// is it a problem? Probably not. I'll optimize this when it's a problem.
+	commandLineProvidedFlags := make(map[string]bool)
+
+	f.flagSet.Visit(func(f *flag.Flag) {
+		commandLineProvidedFlags[f.Name] = true
+	})
+
+	for flagName := range f.parsedFlags {
+		if _, exists := commandLineProvidedFlags[flagName]; !exists {
+			delete(f.parsedFlags, flagName)
+		}
 	}
 
-	return f.flagSet.Parse(args)
+	return nil
 }
 
 func defaultValFn[T any](f Field) (T, error) {
@@ -177,12 +193,4 @@ func defaultValFn[T any](f Field) (T, error) {
 	}
 
 	return result.(T), nil
-}
-
-func valueFn[T comparable](parsedVal, defaultVal T) any {
-	if parsedVal == defaultVal {
-		return nil
-	}
-
-	return parsedVal
 }
