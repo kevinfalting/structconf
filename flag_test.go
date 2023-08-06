@@ -13,6 +13,7 @@ func TestFlags(t *testing.T) {
 		Int int `conf:"flag:int"`
 	}
 
+	t.Run("non-zero flag value provided", func(t *testing.T) {
 	var a A
 	fields, err := structconf.SettableFields(&a)
 	if err != nil {
@@ -41,4 +42,5 @@ func TestFlags(t *testing.T) {
 	if !reflect.DeepEqual(5, result) {
 		t.Errorf("expected 5, got %+v", result)
 	}
+	})
 }
