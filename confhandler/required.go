@@ -1,17 +1,19 @@
-package structconf
+package confhandler
 
 import (
 	"context"
 	"fmt"
 	"reflect"
+
+	"github.com/kevinfalting/structconf/stronf"
 )
 
 // Required is a middleware that will require a value to be set. Zero values are
 // allowed when returned from handlers.
-func Required() Middleware {
-	return func(h Handler) Handler {
-		return HandlerFunc(
-			func(ctx context.Context, f Field, interimValue any) (any, error) {
+func Required() stronf.Middleware {
+	return func(h stronf.Handler) stronf.Handler {
+		return stronf.HandlerFunc(
+			func(ctx context.Context, f stronf.Field, interimValue any) (any, error) {
 				result, err := h.Handle(ctx, f, interimValue)
 				if err != nil {
 					return nil, err

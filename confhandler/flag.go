@@ -1,4 +1,4 @@
-package structconf
+package confhandler
 
 import (
 	"context"
@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+
+	"github.com/kevinfalting/structconf/stronf"
 )
 
 // Flag is the handler for parsing command line flags.
@@ -22,7 +24,7 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 
 	a := new(T)
 
-	fields, err := SettableFields(a)
+	fields, err := stronf.SettableFields(a)
 	if err != nil {
 		return nil, err
 	}
@@ -126,9 +128,9 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 	return &f, nil
 }
 
-var _ Handler = (*Flag)(nil)
+var _ stronf.Handler = (*Flag)(nil)
 
-func (f *Flag) Handle(ctx context.Context, field Field, _ any) (any, error) {
+func (f *Flag) Handle(ctx context.Context, field stronf.Field, _ any) (any, error) {
 	flagName, ok := field.LookupTag("conf", "flag")
 	if !ok {
 		return nil, nil
@@ -177,7 +179,7 @@ func (f *Flag) Parse(args ...string) error {
 	return nil
 }
 
-func defaultValFn[T any](f Field) (T, error) {
+func defaultValFn[T any](f stronf.Field) (T, error) {
 	defaultVal, ok := f.LookupTag("conf", "default")
 	if !ok {
 		return *new(T), nil

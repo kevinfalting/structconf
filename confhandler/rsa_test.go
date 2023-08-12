@@ -1,14 +1,15 @@
-package structconf_test
+package confhandler_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/kevinfalting/structconf"
+	"github.com/kevinfalting/structconf/confhandler"
+	"github.com/kevinfalting/structconf/stronf"
 )
 
 func TestRSAHandlerMethods(t *testing.T) {
-	handler := &structconf.RSAHandler{}
+	handler := &confhandler.RSAHandler{}
 
 	// Generate a new key pair
 	privKeyPEM, pubKeyPEM, err := handler.NewPEMKeyPair(2048)
@@ -64,7 +65,7 @@ func TestRSAHandlerMethods(t *testing.T) {
 	a := A{
 		Password: string(ciphertext),
 	}
-	fields, err := structconf.SettableFields(&a)
+	fields, err := stronf.SettableFields(&a)
 	if err != nil {
 		t.Fatalf("failed to get SettableFields: %v", err)
 	}
@@ -101,7 +102,7 @@ func TestRSAHandlerMethods(t *testing.T) {
 	}
 
 	var a1 A
-	fields, err = structconf.SettableFields(&a1)
+	fields, err = stronf.SettableFields(&a1)
 	if err != nil {
 		t.Fatalf("failed to get SettableFields: %v", err)
 	}

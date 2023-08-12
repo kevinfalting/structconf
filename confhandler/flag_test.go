@@ -1,11 +1,12 @@
-package structconf_test
+package confhandler_test
 
 import (
 	"context"
 	"reflect"
 	"testing"
 
-	"github.com/kevinfalting/structconf"
+	"github.com/kevinfalting/structconf/confhandler"
+	"github.com/kevinfalting/structconf/stronf"
 )
 
 func TestFlags(t *testing.T) {
@@ -15,7 +16,7 @@ func TestFlags(t *testing.T) {
 
 	t.Run("non-zero flag value provided", func(t *testing.T) {
 		var a A
-		fields, err := structconf.SettableFields(&a)
+		fields, err := stronf.SettableFields(&a)
 		if err != nil {
 			t.Fatalf("failed to SettableFields: %v", err)
 		}
@@ -24,7 +25,7 @@ func TestFlags(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		flagsHandler, err := structconf.NewFlag[A](nil)
+		flagsHandler, err := confhandler.NewFlag[A](nil)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -46,7 +47,7 @@ func TestFlags(t *testing.T) {
 
 	t.Run("zero flag value provided", func(t *testing.T) {
 		var a A
-		fields, err := structconf.SettableFields(&a)
+		fields, err := stronf.SettableFields(&a)
 		if err != nil {
 			t.Fatalf("failed to SettableFields: %v", err)
 		}
@@ -55,7 +56,7 @@ func TestFlags(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		flagsHandler, err := structconf.NewFlag[A](nil)
+		flagsHandler, err := confhandler.NewFlag[A](nil)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -77,7 +78,7 @@ func TestFlags(t *testing.T) {
 
 	t.Run("no flag value provided", func(t *testing.T) {
 		var a A
-		fields, err := structconf.SettableFields(&a)
+		fields, err := stronf.SettableFields(&a)
 		if err != nil {
 			t.Fatalf("failed to SettableFields: %v", err)
 		}
@@ -86,7 +87,7 @@ func TestFlags(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		flagsHandler, err := structconf.NewFlag[A](nil)
+		flagsHandler, err := confhandler.NewFlag[A](nil)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}

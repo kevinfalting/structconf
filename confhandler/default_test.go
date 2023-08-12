@@ -1,4 +1,4 @@
-package structconf_test
+package confhandler_test
 
 import (
 	"context"
@@ -6,7 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/kevinfalting/structconf"
+	"github.com/kevinfalting/structconf/confhandler"
+	"github.com/kevinfalting/structconf/stronf"
 )
 
 func TestDefault(t *testing.T) {
@@ -15,7 +16,7 @@ func TestDefault(t *testing.T) {
 			Int int `conf:"default"`
 		}{}
 
-		fields, err := structconf.SettableFields(&A)
+		fields, err := stronf.SettableFields(&A)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -23,13 +24,13 @@ func TestDefault(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
+		handler := stronf.HandlerFunc(
+			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
 				return nil, nil
 			},
 		)
 
-		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
+		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err == nil {
@@ -45,7 +46,7 @@ func TestDefault(t *testing.T) {
 			Int int `conf:"default:5"`
 		}{}
 
-		fields, err := structconf.SettableFields(&A)
+		fields, err := stronf.SettableFields(&A)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -53,13 +54,13 @@ func TestDefault(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
+		handler := stronf.HandlerFunc(
+			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
 				return nil, nil
 			},
 		)
 
-		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
+		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err != nil {
@@ -75,7 +76,7 @@ func TestDefault(t *testing.T) {
 			Int int `conf:"default:5"`
 		}{}
 
-		fields, err := structconf.SettableFields(&A)
+		fields, err := stronf.SettableFields(&A)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -83,13 +84,13 @@ func TestDefault(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
+		handler := stronf.HandlerFunc(
+			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
 				return nil, errors.New("i'm an error")
 			},
 		)
 
-		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
+		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err == nil {
@@ -107,7 +108,7 @@ func TestDefault(t *testing.T) {
 			Int: 88,
 		}
 
-		fields, err := structconf.SettableFields(&A)
+		fields, err := stronf.SettableFields(&A)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -115,13 +116,13 @@ func TestDefault(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
+		handler := stronf.HandlerFunc(
+			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
 				return nil, nil
 			},
 		)
 
-		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
+		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err != nil {
@@ -137,7 +138,7 @@ func TestDefault(t *testing.T) {
 			Int int `conf:"default:5"`
 		}{}
 
-		fields, err := structconf.SettableFields(&A)
+		fields, err := stronf.SettableFields(&A)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -145,13 +146,13 @@ func TestDefault(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		handler := structconf.HandlerFunc(
-			func(ctx context.Context, f structconf.Field, _ any) (any, error) {
+		handler := stronf.HandlerFunc(
+			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
 				return 88, nil
 			},
 		)
 
-		h := structconf.WrapMiddleware([]structconf.Handler{handler}, structconf.Default())
+		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err != nil {

@@ -1,4 +1,4 @@
-package structconf
+package confhandler
 
 import (
 	"context"
@@ -10,6 +10,8 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+
+	"github.com/kevinfalting/structconf/stronf"
 )
 
 // RSA is a struct that holds a pair of RSA keys and provides methods for
@@ -26,13 +28,13 @@ type RSAHandler struct {
 	Label []byte
 }
 
-var _ Handler = (*RSAHandler)(nil)
+var _ stronf.Handler = (*RSAHandler)(nil)
 
 // Handle applies the RSA decryption process to a given field value. It checks
 // for the "secret" tag and decrypts the value if found. If a previous handler
 // has attempted to set a value, represented by the interimValue, this handler
 // will decrypt the interimValue, otherwise it will decrypt the field value.
-func (r *RSAHandler) Handle(ctx context.Context, f Field, interimValue any) (any, error) {
+func (r *RSAHandler) Handle(ctx context.Context, f stronf.Field, interimValue any) (any, error) {
 	_, ok := f.LookupTag("conf", "secret")
 	if !ok {
 		return nil, nil

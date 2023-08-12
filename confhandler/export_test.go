@@ -1,4 +1,4 @@
-package structconf
+package confhandler
 
 var (
 	IsZero             = isZero

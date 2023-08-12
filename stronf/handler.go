@@ -1,4 +1,4 @@
-package structconf
+package stronf
 
 import (
 	"context"

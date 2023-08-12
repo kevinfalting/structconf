@@ -1,11 +1,12 @@
-package structconf_test
+package confhandler_test
 
 import (
 	"context"
 	"reflect"
 	"testing"
 
-	"github.com/kevinfalting/structconf"
+	"github.com/kevinfalting/structconf/confhandler"
+	"github.com/kevinfalting/structconf/stronf"
 )
 
 func TestEnvironmentVariable(t *testing.T) {
@@ -16,7 +17,7 @@ func TestEnvironmentVariable(t *testing.T) {
 	t.Run("env var set", func(t *testing.T) {
 		var a A
 
-		fields, err := structconf.SettableFields(&a)
+		fields, err := stronf.SettableFields(&a)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -27,7 +28,7 @@ func TestEnvironmentVariable(t *testing.T) {
 
 		t.Setenv("INT", "5")
 
-		var ev structconf.EnvironmentVariable
+		var ev confhandler.EnvironmentVariable
 
 		result, err := ev.Handle(context.Background(), fields[0], nil)
 		if err != nil {
@@ -46,7 +47,7 @@ func TestEnvironmentVariable(t *testing.T) {
 	t.Run("no env var set", func(t *testing.T) {
 		var a A
 
-		fields, err := structconf.SettableFields(&a)
+		fields, err := stronf.SettableFields(&a)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -55,7 +56,7 @@ func TestEnvironmentVariable(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		var ev structconf.EnvironmentVariable
+		var ev confhandler.EnvironmentVariable
 
 		result, err := ev.Handle(context.Background(), fields[0], nil)
 		if err != nil {
@@ -70,7 +71,7 @@ func TestEnvironmentVariable(t *testing.T) {
 	t.Run("env var set wrong type - empty string", func(t *testing.T) {
 		var a A
 
-		fields, err := structconf.SettableFields(&a)
+		fields, err := stronf.SettableFields(&a)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -81,7 +82,7 @@ func TestEnvironmentVariable(t *testing.T) {
 
 		t.Setenv("INT", "")
 
-		var ev structconf.EnvironmentVariable
+		var ev confhandler.EnvironmentVariable
 
 		result, err := ev.Handle(context.Background(), fields[0], nil)
 		if err == nil {
@@ -98,7 +99,7 @@ func TestEnvironmentVariable(t *testing.T) {
 			Int int `conf:"asdf"`
 		}{}
 
-		fields, err := structconf.SettableFields(&b)
+		fields, err := stronf.SettableFields(&b)
 		if err != nil {
 			t.Fatalf("expected no error, got %v", err)
 		}
@@ -107,7 +108,7 @@ func TestEnvironmentVariable(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		var ev structconf.EnvironmentVariable
+		var ev confhandler.EnvironmentVariable
 
 		result, err := ev.Handle(context.Background(), fields[0], nil)
 		if err != nil {

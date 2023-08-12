@@ -1,10 +1,10 @@
-package structconf_test
+package confhandler_test
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/kevinfalting/structconf"
+	"github.com/kevinfalting/structconf/confhandler"
 )
 
 func TestParseStringForKind(t *testing.T) {
@@ -44,7 +44,7 @@ func TestParseStringForKind(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := structconf.ParseStringForKind(tt.input, tt.kind)
+			got, err := confhandler.ParseStringForKind(tt.input, tt.kind)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("got error = %v, wantErr %v", err, tt.wantErr)
 				return
