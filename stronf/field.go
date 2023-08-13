@@ -2,7 +2,6 @@ package stronf
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"reflect"
 	"strings"
@@ -172,32 +171,20 @@ func SettableFields(i any) ([]Field, error) {
 	return fields, nil
 }
 
-func Parse(ctx context.Context, cfg any, h Handler) error {
-	if reflect.ValueOf(cfg).Kind() != reflect.Ptr {
-		return errors.New("cfg must be a pointer")
-	}
-
-	if h == nil {
-		return errors.New("handler must not be nil")
-	}
-
-	fields, err := SettableFields(cfg)
+// ParseField will call the handler against the field and set the field to the
+// returned handler value. If the handler returns nil, no change is made to the
+// field.
+func ParseField(ctx context.Context, field Field, h Handler) error {
+	val, err := h.Handle(ctx, field, nil)
 	if err != nil {
 		return err
 	}
 
-	for _, field := range fields {
-		val, err := h.Handle(ctx, field, nil)
-		if err != nil {
-			return err
-		}
-
-		if val == nil {
-			continue
-		}
-
-		field.set(reflect.ValueOf(val))
+	if val == nil {
+		return nil
 	}
+
+	field.set(reflect.ValueOf(val))
 
 	return nil
 }

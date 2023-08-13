@@ -62,5 +62,16 @@ func (c *Conf[T]) Handle(ctx context.Context, field stronf.Field, interimValue a
 // Parse will walk every field and nested field in the provided struct appling
 // the handlers to each field.
 func (c *Conf[T]) Parse(ctx context.Context, cfg *T) error {
-	return stronf.Parse(ctx, cfg, c)
+	fields, err := stronf.SettableFields(cfg)
+	if err != nil {
+		return err
+	}
+
+	for _, field := range fields {
+		if err := stronf.ParseField(ctx, field, c); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
