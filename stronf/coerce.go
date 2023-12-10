@@ -1,13 +1,32 @@
-package confhandler
+package stronf
 
 import (
 	"fmt"
 	"reflect"
 	"strconv"
+	"time"
 )
 
-func parseStringForKind(s string, k reflect.Kind) (any, error) {
-	switch k {
+// Coerce will attempt to convert the provided value into the field's value.
+func Coerce(field Field, val any) (any, error) {
+	rVal := reflect.ValueOf(val)
+	if field.unmarshalerFunc != nil {
+		if !rVal.CanConvert(reflect.SliceOf(reflect.TypeOf(byte(0)))) {
+			return nil, fmt.Errorf("structconf: cannot convert %q to []byte", rVal.Kind())
+		}
+
+		return rVal.Convert(reflect.SliceOf(reflect.TypeOf(byte(0)))).Interface(), nil
+	}
+
+	if rVal.Kind() == reflect.String {
+		return coerceString(field, val.(string))
+	}
+
+	return val, nil
+}
+
+func coerceString(field Field, s string) (any, error) {
+	switch field.Kind() {
 	case reflect.String:
 		return s, nil
 
@@ -33,7 +52,7 @@ func parseStringForKind(s string, k reflect.Kind) (any, error) {
 		return f, nil
 
 	case reflect.Int:
-		i, err := strconv.ParseInt(s, 10, 64)
+		i, err := strconv.ParseInt(s, 10, strconv.IntSize)
 		if err != nil {
 			return nil, err
 		}
@@ -61,6 +80,14 @@ func parseStringForKind(s string, k reflect.Kind) (any, error) {
 		return int32(i), nil
 
 	case reflect.Int64:
+		if field.Type().String() == "time.Duration" {
+			d, err := time.ParseDuration(s)
+			if err != nil {
+				return nil, err
+			}
+			return d, nil
+		}
+
 		i, err := strconv.ParseInt(s, 10, 64)
 		if err != nil {
 			return nil, err
@@ -68,7 +95,7 @@ func parseStringForKind(s string, k reflect.Kind) (any, error) {
 		return i, nil
 
 	case reflect.Uint:
-		u, err := strconv.ParseUint(s, 10, 64)
+		u, err := strconv.ParseUint(s, 10, strconv.IntSize)
 		if err != nil {
 			return nil, err
 		}
@@ -110,6 +137,6 @@ func parseStringForKind(s string, k reflect.Kind) (any, error) {
 		return uintptr(u), nil
 
 	default:
-		return nil, fmt.Errorf("unsuported type: %T", k)
+		return nil, fmt.Errorf("structconf: unsuported type: %q", field.Kind().String())
 	}
 }

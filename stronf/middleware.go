@@ -1,36 +1,21 @@
 package stronf
 
-import "context"
+// Middleware is a function that takes a Handler and returns a modified or
+// wrapped handler.
+type Middleware func(handler Handler) Handler
 
-type Middleware func(h Handler) Handler
-
-func WrapMiddleware(handlers []Handler, mw ...Middleware) Handler {
-	var handler Handler = HandlerFunc(
-		func(ctx context.Context, f Field, interimValue any) (any, error) {
-			val := interimValue
-
-			for _, h := range handlers {
-				result, err := h.Handle(ctx, f, val)
-				if err != nil {
-					return nil, err
-				}
-
-				if result == nil {
-					continue
-				}
-
-				val = result
-			}
-
-			return val, nil
-		},
-	)
-
-	for i := len(mw) - 1; i >= 0; i-- {
-		h := mw[i]
-		if h != nil {
-			handler = h(handler)
+// WrapMiddleware returns a handler that wraps the provided handler with the
+// provided middleware. Middleware are applied in reverse order to achieve a
+// call order that will call the first, second, third, on the way in, and third,
+// second, first, on the way out.
+func WrapMiddleware(handler Handler, middleware ...Middleware) Handler {
+	for i := len(middleware) - 1; i >= 0; i-- {
+		mw := middleware[i]
+		if mw == nil {
+			continue
 		}
+
+		handler = mw(handler)
 	}
 
 	return handler

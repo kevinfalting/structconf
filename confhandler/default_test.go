@@ -30,7 +30,7 @@ func TestDefault(t *testing.T) {
 			},
 		)
 
-		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
+		h := stronf.WrapMiddleware(handler, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err == nil {
@@ -60,14 +60,15 @@ func TestDefault(t *testing.T) {
 			},
 		)
 
-		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
+		h := stronf.WrapMiddleware(handler, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
-		if !reflect.DeepEqual(5, result) {
-			t.Errorf("expected 5, got %+v", result)
+
+		if result != "5" {
+			t.Errorf("expected result to be 5, got %#v", result)
 		}
 	})
 
@@ -90,7 +91,7 @@ func TestDefault(t *testing.T) {
 			},
 		)
 
-		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
+		h := stronf.WrapMiddleware(handler, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err == nil {
@@ -122,7 +123,7 @@ func TestDefault(t *testing.T) {
 			},
 		)
 
-		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
+		h := stronf.WrapMiddleware(handler, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err != nil {
@@ -152,7 +153,7 @@ func TestDefault(t *testing.T) {
 			},
 		)
 
-		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Default())
+		h := stronf.WrapMiddleware(handler, confhandler.Default())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err != nil {

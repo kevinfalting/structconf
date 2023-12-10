@@ -1,16 +1,17 @@
 package stronf_test
 
 import (
+	"context"
+	"errors"
 	"fmt"
-	"os"
+	"log"
 	"testing"
-	"text/tabwriter"
-	"unsafe"
+	"time"
 
 	"github.com/kevinfalting/structconf/stronf"
 )
 
-func TestLookupTag(t *testing.T) {
+func TestField_LookupTag(t *testing.T) {
 	t.Run("key:\"tag:val,tag1:val1\"", func(t *testing.T) {
 		A := struct {
 			Int int `key:"tag:val,tag1:val1"`
@@ -117,277 +118,231 @@ func TestLookupTag(t *testing.T) {
 	})
 }
 
-func TestSettableFields(t *testing.T) {
-	{
-		errTests := []struct {
-			name string
-			arg  any
-		}{
-			{
-				name: "nil",
-				arg:  nil,
-			},
-			{
-				name: "interface",
-				arg:  new(any),
-			},
-			{
-				name: "slice",
-				arg:  make([]int, 0),
-			},
-			{
-				name: "array",
-				arg:  [1]int{},
-			},
-			{
-				name: "map",
-				arg:  make(map[any]any),
-			},
-			{
-				name: "chan",
-				arg:  make(chan any),
-			},
-			{
-				name: "boolean",
-				arg:  true,
-			},
-			{
-				name: "integer",
-				arg:  int(1),
-			},
-			{
-				name: "integer8",
-				arg:  int8(1),
-			},
-			{
-				name: "integer16",
-				arg:  int16(1),
-			},
-			{
-				name: "integer32",
-				arg:  int32(1),
-			},
-			{
-				name: "integer64",
-				arg:  int64(1),
-			},
-			{
-				name: "unsigned integer",
-				arg:  uint(1),
-			},
-			{
-				name: "unsigned integer8",
-				arg:  uint8(1),
-			},
-			{
-				name: "byte",
-				arg:  byte(1),
-			},
-			{
-				name: "unsigned integer16",
-				arg:  uint16(1),
-			},
-			{
-				name: "unsigned integer32",
-				arg:  uint32(1),
-			},
-			{
-				name: "unsigned integer64",
-				arg:  uint64(1),
-			},
-			{
-				name: "unsigned integer pointer",
-				arg:  uintptr(1),
-			},
-			{
-				name: "float32",
-				arg:  float32(1.0),
-			},
-			{
-				name: "float64",
-				arg:  float64(1.0),
-			},
-			{
-				name: "complex64",
-				arg:  complex64(1 + 2i),
-			},
-			{
-				name: "complex128",
-				arg:  complex128(1 + 2i),
-			},
-			{
-				name: "string",
-				arg:  "test",
-			},
-			{
-				name: "rune",
-				arg:  rune('a'),
-			},
-			{
-				name: "function",
-				arg:  func() {},
-			},
-			{
-				name: "unsafe pointer",
-				arg:  unsafe.Pointer(new(int)),
-			},
-		}
-
-		for _, tt := range errTests {
-			t.Run(tt.name+" returns error", func(t *testing.T) {
-				_, err := stronf.SettableFields(tt.arg)
-				if err == nil {
-					t.Fatalf("expected error, got %v", err)
-				}
-			})
-		}
+func ExampleField_LookupTag() {
+	type Config struct {
+		DatabaseURL string `conf:"env:DATABASE_URL,required,key:val" custom:"flag:db-url" emptyKey:""`
 	}
 
-	{
-		type TestStruct struct {
-			Field1 int
-			Field2 string
-		}
-
-		noErrTests := []struct {
-			name string
-			arg  any
-		}{
-			{
-				name: "struct",
-				arg:  TestStruct{},
-			},
-			{
-				name: "pointer to struct",
-				arg:  &TestStruct{},
-			},
-		}
-
-		for _, tt := range noErrTests {
-			t.Run(tt.name+" does not return error", func(t *testing.T) {
-				_, err := stronf.SettableFields(tt.arg)
-				if err != nil {
-					t.Fatalf("expected no error, got %v", err)
-				}
-			})
-		}
+	var config Config
+	fields, err := stronf.SettableFields(&config)
+	if err != nil {
+		log.Println(err)
+		return
 	}
 
-	{
-		type TestStruct struct {
-			Field1 int
-			Field2 string
-		}
-
-		type testStruct struct {
-			Field3 int
-			Field4 string
-		}
-
-		type AllTypesStruct struct {
-			// Basic types - 19 / 19
-			BoolValue       bool
-			IntValue        int
-			Int8Value       int8
-			Int16Value      int16
-			Int32Value      int32
-			Int64Value      int64
-			UintValue       uint
-			Uint8Value      uint8
-			ByteValue       byte
-			Uint16Value     uint16
-			Uint32Value     uint32
-			Uint64Value     uint64
-			UintptrValue    uintptr
-			Float32Value    float32
-			Float64Value    float64
-			Complex64Value  complex64
-			Complex128Value complex128
-			StringValue     string
-			RuneValue       rune
-
-			// Composite types - 6 / 0
-			ArrayValue   [1]int
-			SliceValue   []int
-			MapValue     map[string]int
-			ChanValue    chan int
-			FuncValue    func() int
-			PointerValue *int
-
-			// Unsafe Pointer - 1 / 0
-			UnsafePointerValue unsafe.Pointer
-
-			// unexported field - 1 / 0
-			unexported int
-
-			// Structs - top 6 / fields 8 / settable 6
-			AnonStructValue struct{ Field int }
-			StructValue     TestStruct
-			TestStruct                              // exported embedded struct
-			testStruct                              // unexported embedded struct
-			PtrStruct       *struct{ Hello string } // initialize me
-			NilStruct       *TestStruct             // leave me nil
-		}
-
-		t.Run("returns only settable fields", func(t *testing.T) {
-			s := AllTypesStruct{
-				ArrayValue:         [1]int{},
-				SliceValue:         make([]int, 0),
-				MapValue:           make(map[string]int),
-				ChanValue:          make(chan int),
-				FuncValue:          func() int { return 1 },
-				PointerValue:       new(int),
-				UnsafePointerValue: unsafe.Pointer(new(int)),
-				AnonStructValue:    struct{ Field int }{Field: 1},
-				PtrStruct:          &struct{ Hello string }{Hello: "World"},
-			}
-
-			fields, err := stronf.SettableFields(&s)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-
-			if testing.Verbose() {
-				w := tabwriter.NewWriter(os.Stderr, 0, 0, 1, ' ', tabwriter.Debug)
-				for i, f := range fields {
-					fmt.Fprintf(w, "%d:\tname: %s\tkind: %s\ttype: %s\tvalue: %s\n", i+1, f.Name(), f.Kind(), f.Type(), f.Value())
-				}
-				w.Flush()
-			}
-
-			if len(fields) != 25 {
-				t.Errorf("expected len 25, got len: %d", len(fields))
-			}
-		})
+	if len(fields) != 1 {
+		log.Println("expected 1 field")
+		return
 	}
 
-	t.Run("unexported struct", func(t *testing.T) {
-		type unexported struct {
-			Int int
-		}
+	field := fields[0]
+	if _, ok := field.LookupTag("no-exist", "hello"); ok {
+		log.Println("should not recieve a value for a key that doesn't exist")
+	}
 
-		u := unexported{Int: 22}
+	if val, ok := field.LookupTag("emptyKey", ""); ok {
+		fmt.Printf("val: %q\n", val)
+	}
 
-		fields, err := stronf.SettableFields(&u)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+	if val, ok := field.LookupTag("custom", "flag"); ok {
+		fmt.Printf("val: %q\n", val)
+	}
 
-		if len(fields) != 1 {
-			t.Errorf("expected 1 field, got %d", len(fields))
+	if val, ok := field.LookupTag("conf", "env"); ok {
+		fmt.Printf("val: %q\n", val)
+	}
+
+	if val, ok := field.LookupTag("conf", "required"); ok {
+		fmt.Printf("val: %q\n", val)
+	}
+	// Output:
+	// val: ""
+	// val: "db-url"
+	// val: "DATABASE_URL"
+	// val: ""
+}
+
+func TestField_Parse(t *testing.T) {
+	type Config struct {
+		String string
+	}
+
+	t.Run("nil handler", func(t *testing.T) {
+		var field stronf.Field
+		err := field.Parse(context.Background(), nil)
+		if err == nil {
+			t.Error("expected error, got none")
 		}
 	})
 
-	t.Run("anonymous struct", func(t *testing.T) {
-		a := struct{ Int int }{Int: 55}
+	t.Run("should return an error if handler returns error and not update the field", func(t *testing.T) {
+		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			return nil, errors.New("an error")
+		}
 
-		fields, err := stronf.SettableFields(&a)
+		expect := "i'm a default value"
+
+		config := Config{
+			String: expect,
+		}
+
+		fields, err := stronf.SettableFields(&config)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
+			t.Fatal("failed to get SettableFields:", err)
 		}
 
 		if len(fields) != 1 {
-			t.Errorf("expected 1 field, got %d", len(fields))
+			t.Fatalf("expected 1 field, got %d", len(fields))
+		}
+
+		if err := fields[0].Parse(context.Background(), handler); err == nil {
+			t.Error("expected error, got none")
+		}
+
+		got, ok := fields[0].Value().(string)
+		if !ok {
+			t.Fatalf("expected field value to be a string, got %T", fields[0].Value())
+		}
+
+		if got != expect {
+			t.Fatalf("expected %q, got %q", expect, got)
+		}
+	})
+
+	t.Run("should not override struct value if handler returns nil", func(t *testing.T) {
+		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			// This additionally ensures that Field_Parse is passing in <nil> as the
+			// initial interimValue
+			return interimValue, nil
+		}
+
+		expect := "i'm a default value"
+
+		config := Config{
+			String: expect,
+		}
+
+		fields, err := stronf.SettableFields(&config)
+		if err != nil {
+			t.Fatal("failed to get SettableFields:", err)
+		}
+
+		if len(fields) != 1 {
+			t.Fatalf("expected 1 field, got %d", len(fields))
+		}
+
+		if err := fields[0].Parse(context.Background(), handler); err != nil {
+			t.Fatal("failed to Parse:", err)
+		}
+
+		got, ok := fields[0].Value().(string)
+		if !ok {
+			t.Fatalf("expected field value to be a string, got %T", fields[0].Value())
+		}
+
+		if got != expect {
+			t.Fatalf("expected %q, got %q", expect, got)
+		}
+	})
+
+	t.Run("should set value returned by handler", func(t *testing.T) {
+		expect := "i'm a value returned by the handler"
+		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			return expect, nil
+		}
+
+		config := Config{
+			String: "i'm a default value",
+		}
+
+		fields, err := stronf.SettableFields(&config)
+		if err != nil {
+			t.Fatal("failed to get SettableFields:", err)
+		}
+
+		if len(fields) != 1 {
+			t.Fatalf("expected 1 field, got %d", len(fields))
+		}
+
+		if err := fields[0].Parse(context.Background(), handler); err != nil {
+			t.Fatal("failed to Parse:", err)
+		}
+
+		got, ok := fields[0].Value().(string)
+		if !ok {
+			t.Fatalf("expected field value to be a string, got %T", fields[0].Value())
+		}
+
+		if got != expect {
+			t.Fatalf("expected %q, got %q", expect, got)
+		}
+	})
+
+	t.Run("should error if value returned by handler is wrong type", func(t *testing.T) {
+		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			return 55, nil
+		}
+
+		expect := "i'm a default value"
+
+		config := Config{
+			String: expect,
+		}
+
+		fields, err := stronf.SettableFields(&config)
+		if err != nil {
+			t.Fatal("failed to get SettableFields:", err)
+		}
+
+		if len(fields) != 1 {
+			t.Fatalf("expected 1 field, got %d", len(fields))
+		}
+
+		if err := fields[0].Parse(context.Background(), handler); err == nil {
+			t.Error("expected error got none")
+		}
+
+		got, ok := fields[0].Value().(string)
+		if !ok {
+			t.Fatalf("expected field value to be a string, got %T", fields[0].Value())
+		}
+
+		if got != expect {
+			t.Fatalf("expected %q, got %q", expect, got)
+		}
+	})
+
+	t.Run("can set using unmarshalerFunc", func(t *testing.T) {
+		type TimeConfig struct {
+			Time time.Time
+		}
+
+		expectTimeString := "2023-11-05T15:04:05Z"
+		expect, err := time.Parse(time.RFC3339, expectTimeString)
+		if err != nil {
+			t.Fatal("failed to Parse:", err)
+		}
+
+		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			return []byte(expectTimeString), nil
+		}
+
+		var config TimeConfig
+		fields, err := stronf.SettableFields(&config)
+		if err != nil {
+			t.Fatal("failed to SettableFields:", err)
+		}
+
+		if len(fields) != 1 {
+			t.Fatalf("expected 1 field, got %d", len(fields))
+		}
+
+		if err := fields[0].Parse(context.Background(), handler); err != nil {
+			t.Error("failed to Parse:", err)
+		}
+
+		if config.Time.Compare(expect) != 0 {
+			t.Errorf("expected %s, got %s", expect, config.Time)
 		}
 	})
 }

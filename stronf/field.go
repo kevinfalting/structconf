@@ -2,59 +2,76 @@ package stronf
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"reflect"
-	"strings"
 )
 
-// Field represents a single settable field in the provided struct.
+// Field represents a single settable struct field in the parsed struct.
 type Field struct {
-	reflectValue       reflect.Value
-	reflectStructField reflect.StructField
+	rVal            reflect.Value
+	rStructField    reflect.StructField
+	unmarshalerFunc func([]byte) error
 }
 
 // Name returns the name of the struct field.
 func (f Field) Name() string {
-	return f.reflectStructField.Name
+	return f.rStructField.Name
 }
 
 // Value returns the value of the struct field.
 func (f Field) Value() any {
-	return f.reflectValue.Interface()
+	return f.rVal.Interface()
 }
 
 // IsZero checks if the struct field's value is it's zero type.
 func (f Field) IsZero() bool {
-	return f.reflectValue.IsZero()
-}
-
-// Zero returns the type's zero value.
-func (f Field) Zero() any {
-	return reflect.Zero(f.reflectValue.Type()).Interface()
+	return f.rVal.IsZero()
 }
 
 // Kind returns the reflect package's Kind.
 func (f Field) Kind() reflect.Kind {
-	return f.reflectValue.Kind()
+	return f.rVal.Kind()
 }
 
 // Type returns the reflect package's Type.
 func (f Field) Type() reflect.Type {
-	return f.reflectValue.Type()
+	return f.rVal.Type()
 }
 
-func (f Field) set(val any) {
-	f.reflectValue.Set(val.(reflect.Value))
+func (f Field) set(val any) error {
+	val, err := Coerce(f, val)
+	if err != nil {
+		return err
+	}
+
+	if f.unmarshalerFunc != nil {
+		data, ok := val.([]byte)
+		if !ok {
+			return fmt.Errorf("structconf: unmarshalable field %s must be provided a byte slice, got %T", f.Name(), val)
+		}
+
+		if err := f.unmarshalerFunc(data); err != nil {
+			return err
+		}
+
+		return nil
+	}
+
+	rVal := reflect.ValueOf(val)
+
+	if f.Kind() != rVal.Kind() {
+		return fmt.Errorf("structconf: type mismatch, expected %q, got %q", f.Kind(), rVal.Kind())
+	}
+
+	f.rVal.Set(rVal)
+	return nil
 }
 
-// LookupTag will return the value associated with the key and optional tag.
-// Supported formats include:
-// `key:"tag:val,tag1:val1"`
-// `key:"tag:val", key1:"tag:val"`
-// `key:"tag"` -> LookupTag("key", "") -> "tag", true
-// `key:""` -> LookupTag("key", "") -> "", true
+// LookupTag will return the value associated with the key and optional tag. See
+// examples for supported formats.
 func (f Field) LookupTag(key, tag string) (string, bool) {
-	value, ok := f.reflectStructField.Tag.Lookup(key)
+	value, ok := f.rStructField.Tag.Lookup(key)
 	if !ok {
 		return "", false
 	}
@@ -68,114 +85,15 @@ func (f Field) LookupTag(key, tag string) (string, bool) {
 	return val, ok
 }
 
-func parseStructTag(tag string) map[string]string {
-	options := make(map[string]string)
-	for _, option := range strings.Split(tag, ",") {
-		optionParts := strings.SplitN(option, ":", 2)
-		key := optionParts[0]
-		var value string
-		if len(optionParts) > 1 {
-			value = optionParts[1]
-		}
-
-		options[key] = value
-	}
-
-	return options
-}
-
-// SettableFields returns a slice of all settable struct fields in the provided
-// struct. The provided argument must be a pointer to a struct.
-func SettableFields(i any) ([]Field, error) {
-	val := reflect.ValueOf(i)
-
-	if val.Kind() == reflect.Ptr {
-		val = val.Elem()
-	}
-
-	if val.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("expected struct, got %v", val.Kind())
-	}
-
-	var fields []Field
-	typ := val.Type()
-
-	for i := 0; i < val.NumField(); i++ {
-		fieldValue := val.Field(i)
-		fieldType := typ.Field(i)
-
-		if !fieldType.IsExported() {
-			continue
-		}
-
-		switch fieldValue.Kind() {
-		case reflect.Pointer:
-			if fieldValue.Elem().Kind() != reflect.Struct || fieldValue.IsNil() {
-				continue
-			}
-
-			f, err := SettableFields(fieldValue.Interface())
-			if err != nil {
-				return nil, err
-			}
-
-			fields = append(fields, f...)
-
-		case reflect.Struct:
-			if fieldValue.CanAddr() || fieldType.Anonymous {
-				f, err := SettableFields(fieldValue.Addr().Interface())
-				if err != nil {
-					return nil, err
-				}
-
-				fields = append(fields, f...)
-
-			} else {
-				f, err := SettableFields(fieldValue.Interface())
-				if err != nil {
-					return nil, err
-				}
-
-				fields = append(fields, f...)
-			}
-
-			continue
-
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
-			reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
-			reflect.Complex64, reflect.Complex128,
-			reflect.Float32, reflect.Float64,
-			reflect.Uintptr,
-			reflect.String,
-			reflect.Bool:
-
-			if !fieldValue.CanSet() {
-				continue
-			}
-
-			fields = append(fields, Field{
-				reflectStructField: fieldType,
-				reflectValue:       fieldValue,
-			})
-
-		case reflect.Slice, reflect.Map, reflect.Chan, reflect.Func,
-			reflect.UnsafePointer, reflect.Array, reflect.Interface:
-			// Skip fields of these kinds
-			continue
-
-		default:
-			return nil, fmt.Errorf("unexpected kind: %v", fieldValue.Kind())
-		}
-	}
-
-	return fields, nil
-}
-
-// ParseField will call the handler against the field and set the field to the
+// Parse will call the handler against the field and set the field to the
 // returned handler value. If the handler returns nil, no change is made to the
 // field.
-func ParseField(ctx context.Context, field Field, h Handler) error {
-	val, err := h.Handle(ctx, field, nil)
+func (f Field) Parse(ctx context.Context, handler Handler) error {
+	if handler == nil {
+		return errors.New("structconf: nil handler")
+	}
+
+	val, err := handler.Handle(ctx, f, nil)
 	if err != nil {
 		return err
 	}
@@ -184,7 +102,9 @@ func ParseField(ctx context.Context, field Field, h Handler) error {
 		return nil
 	}
 
-	field.set(reflect.ValueOf(val))
+	if err := f.set(val); err != nil {
+		return err
+	}
 
 	return nil
 }

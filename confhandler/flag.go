@@ -31,18 +31,6 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 
 	parsedFlags := make(map[string]func() any)
 
-	parseFlagValueFn := func(flagName string, kind reflect.Kind) func(string) error {
-		return func(s string) error {
-			val, err := parseStringForKind(s, kind)
-			if err != nil {
-				return err
-			}
-
-			parsedFlags[flagName] = func() any { return val }
-			return nil
-		}
-	}
-
 	for _, field := range fields {
 		flagName, ok := field.LookupTag("conf", "flag")
 		if !ok {
@@ -116,7 +104,14 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 			parsedFlags[flagName] = func() any { return u }
 
 		default:
-			fset.Func(flagName, usage, parseFlagValueFn(flagName, field.Kind()))
+			parseFlagValueFn := func(flagName string, field stronf.Field) func(string) error {
+				return func(s string) error {
+					parsedFlags[flagName] = func() any { return s }
+					return nil
+				}
+			}
+
+			fset.Func(flagName, usage, parseFlagValueFn(flagName, field))
 		}
 	}
 
@@ -130,10 +125,10 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 
 var _ stronf.Handler = (*Flag)(nil)
 
-func (f *Flag) Handle(ctx context.Context, field stronf.Field, _ any) (any, error) {
+func (f *Flag) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
 	flagName, ok := field.LookupTag("conf", "flag")
 	if !ok {
-		return nil, nil
+		return interimValue, nil
 	}
 
 	if err := f.Parse(); err != nil {
@@ -142,7 +137,7 @@ func (f *Flag) Handle(ctx context.Context, field stronf.Field, _ any) (any, erro
 
 	valueFn, ok := f.parsedFlags[flagName]
 	if !ok {
-		return nil, nil
+		return interimValue, nil
 	}
 
 	return valueFn(), nil
@@ -179,19 +174,19 @@ func (f *Flag) Parse(args ...string) error {
 	return nil
 }
 
-func defaultValFn[T any](f stronf.Field) (T, error) {
-	defaultVal, ok := f.LookupTag("conf", "default")
+func defaultValFn[T any](field stronf.Field) (T, error) {
+	defaultVal, ok := field.LookupTag("conf", "default")
 	if !ok {
 		return *new(T), nil
 	}
 
-	result, err := parseStringForKind(defaultVal, f.Kind())
+	result, err := stronf.Coerce(field, defaultVal)
 	if err != nil {
 		return *new(T), nil
 	}
 
 	if _, ok := result.(T); !ok {
-		return *new(T), fmt.Errorf("value of type %T is not %T", result, *new(T))
+		return *new(T), fmt.Errorf("structconf: value of type %T is not %T", result, *new(T))
 	}
 
 	return result.(T), nil

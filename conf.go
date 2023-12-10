@@ -55,8 +55,9 @@ func New[T any](opts ...confOptionFunc) (*Conf[T], error) {
 // Handle will call all of the configured middleware and handlers on a single
 // field.
 func (c *Conf[T]) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
-	h := stronf.WrapMiddleware(c.Handlers, c.Middleware...)
-	return h.Handle(ctx, field, interimValue)
+	handler := stronf.CombineHandlers(c.Handlers...)
+	handler = stronf.WrapMiddleware(handler, c.Middleware...)
+	return handler.Handle(ctx, field, interimValue)
 }
 
 // Parse will walk every field and nested field in the provided struct appling
@@ -68,7 +69,7 @@ func (c *Conf[T]) Parse(ctx context.Context, cfg *T) error {
 	}
 
 	for _, field := range fields {
-		if err := stronf.ParseField(ctx, field, c); err != nil {
+		if err := field.Parse(ctx, c); err != nil {
 			return err
 		}
 	}

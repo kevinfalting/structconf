@@ -30,7 +30,7 @@ func TestRequired(t *testing.T) {
 				},
 			)
 
-			h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Required())
+			h := stronf.WrapMiddleware(handler, confhandler.Required())
 
 			result, err := h.Handle(context.Background(), fields[0], nil)
 			if err == nil {
@@ -60,7 +60,7 @@ func TestRequired(t *testing.T) {
 				},
 			)
 
-			h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Required())
+			h := stronf.WrapMiddleware(handler, confhandler.Required())
 
 			result, err := h.Handle(context.Background(), fields[0], nil)
 			if err != nil {
@@ -92,7 +92,7 @@ func TestRequired(t *testing.T) {
 				},
 			)
 
-			h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Required())
+			h := stronf.WrapMiddleware(handler, confhandler.Required())
 
 			result, err := h.Handle(context.Background(), fields[0], nil)
 			if err != nil {
@@ -122,7 +122,7 @@ func TestRequired(t *testing.T) {
 				},
 			)
 
-			h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Required())
+			h := stronf.WrapMiddleware(handler, confhandler.Required())
 
 			result, err := h.Handle(context.Background(), fields[0], nil)
 			if err != nil {
@@ -153,7 +153,7 @@ func TestRequired(t *testing.T) {
 			},
 		)
 
-		h := stronf.WrapMiddleware([]stronf.Handler{handler}, confhandler.Required())
+		h := stronf.WrapMiddleware(handler, confhandler.Required())
 
 		result, err := h.Handle(context.Background(), fields[0], nil)
 		if err == nil {
@@ -163,40 +163,4 @@ func TestRequired(t *testing.T) {
 			t.Errorf("expected result to be nil, got %+v", result)
 		}
 	})
-}
-
-func TestIsZero(t *testing.T) {
-	type TestStruct struct {
-		A int
-		B string
-	}
-
-	tests := []struct {
-		input any
-		want  bool
-	}{
-		{0, true},
-		{1, false},
-		{float32(0), true},
-		{float32(1.1), false},
-		{"", true},
-		{"abc", false},
-		{nil, true},
-		{TestStruct{}, true},
-		{TestStruct{A: 1, B: "abc"}, false},
-		{[]int{}, true},
-		{[]int{1, 2, 3}, false},
-		{map[string]int{}, true},
-		{map[string]int{"one": 1, "two": 2}, false},
-		{[...]int{0, 0, 0}, true},
-		{[...]int{1, 2, 3}, false},
-		{func() {}, false},
-	}
-
-	for i, tt := range tests {
-		got := confhandler.IsZero(tt.input)
-		if got != tt.want {
-			t.Errorf("Test %d: expected %v, got %v", i, tt.want, got)
-		}
-	}
 }

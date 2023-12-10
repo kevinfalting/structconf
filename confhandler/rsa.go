@@ -9,7 +9,7 @@ import (
 	"encoding/base64"
 	"encoding/pem"
 	"errors"
-	"fmt"
+	"strings"
 
 	"github.com/kevinfalting/structconf/stronf"
 )
@@ -31,28 +31,24 @@ type RSAHandler struct {
 var _ stronf.Handler = (*RSAHandler)(nil)
 
 // Handle applies the RSA decryption process to a given field value. It checks
-// for the "secret" tag and decrypts the value if found. If a previous handler
-// has attempted to set a value, represented by the interimValue, this handler
-// will decrypt the interimValue, otherwise it will decrypt the field value.
-func (r *RSAHandler) Handle(ctx context.Context, f stronf.Field, interimValue any) (any, error) {
-	_, ok := f.LookupTag("conf", "secret")
-	if !ok {
-		return nil, nil
-	}
-
-	val := f.Value()
+// for a "secret://" prefix on a string value and decrypts the value if found.
+// If a previous handler has attempted to set a value, represented by the
+// interimValue, this handler will decrypt the interimValue, otherwise it will
+// decrypt the field value.
+func (r *RSAHandler) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+	val := field.Value()
 	if interimValue != nil {
 		val = interimValue
 	}
 
 	ciphertext, ok := val.(string)
 	if !ok {
-		return nil, fmt.Errorf("field %q or interimValue must be of type string, got: %T", f.Name(), val)
+		return val, nil
 	}
 
-	if len(ciphertext) == 0 {
-		// If there is nothing to decrypt, that's okay too.
-		return nil, nil
+	ciphertext, ok = strings.CutPrefix(ciphertext, "secret://")
+	if !ok {
+		return val, nil
 	}
 
 	plaintext, err := r.Decrypt([]byte(ciphertext))
@@ -145,7 +141,7 @@ func (r *RSAHandler) NewPEMKeyPair(bitSize int) (privateKey, publicKey []byte, e
 func (r *RSAHandler) PublicKeyFromPEM(pubkeyPEM []byte) (*rsa.PublicKey, error) {
 	block, _ := pem.Decode(pubkeyPEM)
 	if block == nil {
-		return nil, errors.New("failed to pem.Decode public key")
+		return nil, errors.New("structconf: failed to pem.Decode public key")
 	}
 
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
@@ -155,7 +151,7 @@ func (r *RSAHandler) PublicKeyFromPEM(pubkeyPEM []byte) (*rsa.PublicKey, error) 
 
 	publicKey, ok := pub.(*rsa.PublicKey)
 	if !ok {
-		return nil, errors.New("not an RSA public key")
+		return nil, errors.New("structconf: not an RSA public key")
 	}
 
 	r.PublicKey = publicKey

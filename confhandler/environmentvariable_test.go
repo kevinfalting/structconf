@@ -2,7 +2,6 @@ package confhandler_test
 
 import (
 	"context"
-	"reflect"
 	"testing"
 
 	"github.com/kevinfalting/structconf/confhandler"
@@ -35,12 +34,8 @@ func TestEnvironmentVariable(t *testing.T) {
 			t.Errorf("expected no error, got %v", err)
 		}
 
-		if result == nil {
-			t.Errorf("expected not nil result, got %+v", result)
-		}
-
-		if !reflect.DeepEqual(5, result) {
-			t.Errorf("expected 5, got %+v", result)
+		if result != "5" {
+			t.Errorf("expected result 5, got %#v", result)
 		}
 	})
 
@@ -84,13 +79,13 @@ func TestEnvironmentVariable(t *testing.T) {
 
 		var ev confhandler.EnvironmentVariable
 
-		result, err := ev.Handle(context.Background(), fields[0], nil)
-		if err == nil {
-			t.Errorf("expected error, got %v", err)
+		result, err := ev.Handle(context.Background(), fields[0], "1234")
+		if err != nil {
+			t.Errorf("expected no error, got %v", err)
 		}
 
-		if result != nil {
-			t.Errorf("expected nil result, got %+v", result)
+		if result != "" {
+			t.Errorf("expected empty string, got %#v", result)
 		}
 	})
 

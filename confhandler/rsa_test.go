@@ -2,6 +2,7 @@ package confhandler_test
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/kevinfalting/structconf/confhandler"
@@ -59,11 +60,11 @@ func TestRSAHandlerMethods(t *testing.T) {
 	}
 
 	type A struct {
-		Password string `conf:"secret"`
+		Password string
 	}
 
 	a := A{
-		Password: string(ciphertext),
+		Password: fmt.Sprintf("secret://%s", string(ciphertext)),
 	}
 	fields, err := stronf.SettableFields(&a)
 	if err != nil {
@@ -92,7 +93,7 @@ func TestRSAHandlerMethods(t *testing.T) {
 		t.Fatalf("failed to encrypt the plaintext: %v", err)
 	}
 
-	decryptedValue, err = handler.Handle(context.Background(), fields[0], string(ciphertext))
+	decryptedValue, err = handler.Handle(context.Background(), fields[0], fmt.Sprintf("secret://%s", string(ciphertext)))
 	if err != nil {
 		t.Fatalf("failed to handle the field: %v", err)
 	}

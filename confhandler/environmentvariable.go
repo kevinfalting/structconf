@@ -13,16 +13,16 @@ type EnvironmentVariable struct{}
 
 var _ stronf.Handler = EnvironmentVariable{}
 
-func (ev EnvironmentVariable) Handle(ctx context.Context, field stronf.Field, _ any) (any, error) {
+func (ev EnvironmentVariable) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
 	environmentVariable, ok := field.LookupTag("conf", "env")
 	if !ok {
-		return nil, nil
+		return interimValue, nil
 	}
 
 	val, ok := os.LookupEnv(environmentVariable)
 	if !ok {
-		return nil, nil
+		return interimValue, nil
 	}
 
-	return parseStringForKind(val, field.Kind())
+	return val, nil
 }

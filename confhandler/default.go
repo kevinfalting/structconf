@@ -2,7 +2,7 @@ package confhandler
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/kevinfalting/structconf/stronf"
 )
@@ -13,8 +13,8 @@ import (
 func Default() stronf.Middleware {
 	return func(h stronf.Handler) stronf.Handler {
 		return stronf.HandlerFunc(
-			func(ctx context.Context, f stronf.Field, interimValue any) (any, error) {
-				result, err := h.Handle(ctx, f, interimValue)
+			func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+				result, err := h.Handle(ctx, field, interimValue)
 				if err != nil {
 					return nil, err
 				}
@@ -23,20 +23,20 @@ func Default() stronf.Middleware {
 					return result, nil
 				}
 
-				if !f.IsZero() {
+				if !field.IsZero() {
 					return result, nil
 				}
 
-				defaultVal, ok := f.LookupTag("conf", "default")
+				defaultVal, ok := field.LookupTag("conf", "default")
 				if !ok {
 					return result, nil
 				}
 
 				if len(defaultVal) == 0 {
-					return nil, errors.New("empty default value")
+					return nil, fmt.Errorf("structconf: empty default value for field %q", field.Name())
 				}
 
-				return parseStringForKind(defaultVal, f.Kind())
+				return defaultVal, nil
 			},
 		)
 	}
