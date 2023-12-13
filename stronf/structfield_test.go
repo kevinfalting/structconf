@@ -71,7 +71,7 @@ func TestSettableFields(t *testing.T) {
 			t.Fatal("failed to SettableFields:", err)
 		}
 
-		expectNumberOfFields := 27
+		expectNumberOfFields := 28
 		if len(fields) != expectNumberOfFields {
 			for _, field := range fields {
 				t.Errorf("field name: %q, value: %q", field.Name(), field.Value())
