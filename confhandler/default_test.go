@@ -2,7 +2,6 @@ package confhandler_test
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"testing"
 
@@ -24,15 +23,7 @@ func TestDefault(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		handler := stronf.HandlerFunc(
-			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
-				return nil, nil
-			},
-		)
-
-		h := stronf.WrapMiddleware(handler, confhandler.Default())
-
-		result, err := h.Handle(context.Background(), fields[0], nil)
+		result, err := confhandler.Default{}.Handle(context.Background(), fields[0], nil)
 		if err == nil {
 			t.Errorf("expected error, got %v", err)
 		}
@@ -54,51 +45,13 @@ func TestDefault(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		handler := stronf.HandlerFunc(
-			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
-				return nil, nil
-			},
-		)
-
-		h := stronf.WrapMiddleware(handler, confhandler.Default())
-
-		result, err := h.Handle(context.Background(), fields[0], nil)
+		result, err := confhandler.Default{}.Handle(context.Background(), fields[0], nil)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
 
 		if result != "5" {
 			t.Errorf("expected result to be 5, got %#v", result)
-		}
-	})
-
-	t.Run("handler returns error, return error immediately", func(t *testing.T) {
-		A := struct {
-			Int int `conf:"default:5"`
-		}{}
-
-		fields, err := stronf.SettableFields(&A)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-		if len(fields) != 1 {
-			t.Fatalf("expected 1 field, got %d", len(fields))
-		}
-
-		handler := stronf.HandlerFunc(
-			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
-				return nil, errors.New("i'm an error")
-			},
-		)
-
-		h := stronf.WrapMiddleware(handler, confhandler.Default())
-
-		result, err := h.Handle(context.Background(), fields[0], nil)
-		if err == nil {
-			t.Errorf("expected error, got %v", err)
-		}
-		if result != nil {
-			t.Errorf("expected result to be nil, got %+v", result)
 		}
 	})
 
@@ -117,15 +70,7 @@ func TestDefault(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		handler := stronf.HandlerFunc(
-			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
-				return nil, nil
-			},
-		)
-
-		h := stronf.WrapMiddleware(handler, confhandler.Default())
-
-		result, err := h.Handle(context.Background(), fields[0], nil)
+		result, err := confhandler.Default{}.Handle(context.Background(), fields[0], nil)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}
@@ -147,15 +92,7 @@ func TestDefault(t *testing.T) {
 			t.Fatalf("expected 1 field, got %d", len(fields))
 		}
 
-		handler := stronf.HandlerFunc(
-			func(ctx context.Context, f stronf.Field, _ any) (any, error) {
-				return 88, nil
-			},
-		)
-
-		h := stronf.WrapMiddleware(handler, confhandler.Default())
-
-		result, err := h.Handle(context.Background(), fields[0], nil)
+		result, err := confhandler.Default{}.Handle(context.Background(), fields[0], 88)
 		if err != nil {
 			t.Errorf("expected no error, got %v", err)
 		}

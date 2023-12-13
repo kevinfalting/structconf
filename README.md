@@ -10,7 +10,7 @@ Expect breaking changes.
 
 ##  Usage
 
-Built in handlers and middleware support the following comma separated struct tags defined inside of the main struct tag key `conf`.
+Built in handlers support the following comma separated struct tags defined inside of the main struct tag key `conf`.
 
 | tag | usage | description |
 |-|-|-|

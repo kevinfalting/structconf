@@ -15,7 +15,7 @@ func TestParse(t *testing.T) {
 			Int int
 		}
 
-		t.Run("no middleware no handlers", func(t *testing.T) {
+		t.Run("no handlers", func(t *testing.T) {
 			a := thing{Int: 22}
 
 			conf := structconf.Conf[thing]{}
@@ -28,7 +28,7 @@ func TestParse(t *testing.T) {
 			}
 		})
 
-		t.Run("one handler, no middleware", func(t *testing.T) {
+		t.Run("one handler", func(t *testing.T) {
 			a := thing{}
 
 			conf := structconf.Conf[thing]{
@@ -47,25 +47,6 @@ func TestParse(t *testing.T) {
 
 			if a.Int != 5 {
 				t.Errorf("expected 5, got %d", a.Int)
-			}
-		})
-		t.Run("one middleware, no handler", func(t *testing.T) {
-			a := thing{}
-
-			conf := structconf.Conf[thing]{
-				Middleware: []stronf.Middleware{
-					func(h stronf.Handler) stronf.Handler {
-						return stronf.HandlerFunc(
-							func(ctx context.Context, f stronf.Field, iv any) (any, error) {
-								return h.Handle(ctx, f, iv)
-							},
-						)
-					},
-				},
-			}
-
-			if err := conf.Parse(context.Background(), &a); err != nil {
-				t.Error(err)
 			}
 		})
 	})

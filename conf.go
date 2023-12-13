@@ -7,18 +7,16 @@ import (
 	"github.com/kevinfalting/structconf/stronf"
 )
 
-// Conf holds the handlers and middleware for parsing structs. Handlers and
-// Middleware should be provided in the order they're intended to be run, each
-// taking precedence over the last.
+// Conf holds the handlers for parsing structs. Handlers should be provided in
+// the order they're intended to be run, each taking precedence over the last.
 type Conf[T any] struct {
-	Handlers   []stronf.Handler
-	Middleware []stronf.Middleware
+	Handlers []stronf.Handler
 }
 
 var _ stronf.Handler = (*Conf[any])(nil)
 
-// New returns a Conf initialized with all of the default Handlers and
-// Middleware to parse a struct.
+// New returns a Conf initialized with all of the default Handlers to parse a
+// struct.
 func New[T any](opts ...confOptionFunc) (*Conf[T], error) {
 	var confOpt confOption
 	for _, opt := range opts {
@@ -34,11 +32,8 @@ func New[T any](opts ...confOptionFunc) (*Conf[T], error) {
 		Handlers: []stronf.Handler{
 			confhandler.EnvironmentVariable{},
 			flagHandler,
-		},
-
-		Middleware: []stronf.Middleware{
-			confhandler.Required(),
-			confhandler.Default(),
+			confhandler.Default{},
+			confhandler.Required{},
 		},
 	}
 
@@ -52,11 +47,9 @@ func New[T any](opts ...confOptionFunc) (*Conf[T], error) {
 	return &conf, nil
 }
 
-// Handle will call all of the configured middleware and handlers on a single
-// field.
+// Handle will call all of the configured handlers on a single field.
 func (c *Conf[T]) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
 	handler := stronf.CombineHandlers(c.Handlers...)
-	handler = stronf.WrapMiddleware(handler, c.Middleware...)
 	return handler.Handle(ctx, field, interimValue)
 }
 
