@@ -48,9 +48,9 @@ func New[T any](opts ...confOptionFunc) (*Conf[T], error) {
 }
 
 // Handle will call all of the configured handlers on a single field.
-func (c *Conf[T]) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+func (c *Conf[T]) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 	handler := stronf.CombineHandlers(c.Handlers...)
-	return handler.Handle(ctx, field, interimValue)
+	return handler.Handle(ctx, field, proposedValue)
 }
 
 // Parse will walk every field and nested field in the provided struct appling

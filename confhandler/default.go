@@ -12,18 +12,18 @@ import (
 // It's typically best just before the Required handler.
 type Default struct{}
 
-func (h Default) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
-	if interimValue != nil {
-		return interimValue, nil
+func (h Default) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+	if proposedValue != nil {
+		return proposedValue, nil
 	}
 
 	if !field.IsZero() {
-		return interimValue, nil
+		return proposedValue, nil
 	}
 
 	defaultVal, ok := field.LookupTag("conf", "default")
 	if !ok {
-		return interimValue, nil
+		return proposedValue, nil
 	}
 
 	if len(defaultVal) == 0 {

@@ -125,10 +125,10 @@ func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
 
 var _ stronf.Handler = (*Flag)(nil)
 
-func (f *Flag) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+func (f *Flag) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 	flagName, ok := field.LookupTag("conf", "flag")
 	if !ok {
-		return interimValue, nil
+		return proposedValue, nil
 	}
 
 	if err := f.Parse(); err != nil {
@@ -137,7 +137,7 @@ func (f *Flag) Handle(ctx context.Context, field stronf.Field, interimValue any)
 
 	valueFn, ok := f.parsedFlags[flagName]
 	if !ok {
-		return interimValue, nil
+		return proposedValue, nil
 	}
 
 	return valueFn(), nil

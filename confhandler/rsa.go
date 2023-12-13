@@ -33,12 +33,12 @@ var _ stronf.Handler = (*RSAHandler)(nil)
 // Handle applies the RSA decryption process to a given field value. It checks
 // for a "secret://" prefix on a string value and decrypts the value if found.
 // If a previous handler has attempted to set a value, represented by the
-// interimValue, this handler will decrypt the interimValue, otherwise it will
+// proposedValue, this handler will decrypt the proposedValue, otherwise it will
 // decrypt the field value.
-func (r *RSAHandler) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+func (r *RSAHandler) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 	val := field.Value()
-	if interimValue != nil {
-		val = interimValue
+	if proposedValue != nil {
+		val = proposedValue
 	}
 
 	ciphertext, ok := val.(string)

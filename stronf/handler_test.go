@@ -23,7 +23,7 @@ func TestCombineHandlers(t *testing.T) {
 
 	// Test with one handler
 	t.Run("one handler", func(t *testing.T) {
-		h := stronf.CombineHandlers(stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+		h := stronf.CombineHandlers(stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 			return "one", nil
 		}))
 		result, err := h.Handle(context.Background(), stronf.Field{}, nil)
@@ -38,10 +38,10 @@ func TestCombineHandlers(t *testing.T) {
 	// Test with two handlers
 	t.Run("two handlers", func(t *testing.T) {
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "first", nil
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "second", nil
 			}),
 		)
@@ -58,10 +58,10 @@ func TestCombineHandlers(t *testing.T) {
 	t.Run("error from handler", func(t *testing.T) {
 		expectedError := errors.New("handler error")
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return nil, expectedError
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "should not be called", nil
 			}),
 		)
@@ -71,15 +71,15 @@ func TestCombineHandlers(t *testing.T) {
 		}
 	})
 
-	// Test the result of one handler is passed into the interimValue of the next
+	// Test the result of one handler is passed into the proposedValue of the next
 	t.Run("pass interim value", func(t *testing.T) {
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "first", nil
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
-				if interimValue != "first" {
-					t.Errorf("Expected 'first', got %v", interimValue)
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+				if proposedValue != "first" {
+					t.Errorf("Expected 'first', got %v", proposedValue)
 				}
 				return "second", nil
 			}),
@@ -93,13 +93,13 @@ func TestCombineHandlers(t *testing.T) {
 		}
 	})
 
-	// Test the final interimValue is returned
+	// Test the final proposedValue is returned
 	t.Run("final interim value", func(t *testing.T) {
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "first", nil
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "final", nil
 			}),
 		)
@@ -116,11 +116,11 @@ func TestCombineHandlers(t *testing.T) {
 	t.Run("handler order", func(t *testing.T) {
 		var order []string
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				order = append(order, "first")
 				return nil, nil
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
+			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				order = append(order, "second")
 				return nil, nil
 			}),

@@ -13,20 +13,20 @@ import (
 // last handler.
 type Required struct{}
 
-func (h Required) Handle(ctx context.Context, field stronf.Field, interimValue any) (any, error) {
-	if interimValue != nil && reflect.ValueOf(interimValue).IsZero() {
-		return interimValue, nil
+func (h Required) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+	if proposedValue != nil && reflect.ValueOf(proposedValue).IsZero() {
+		return proposedValue, nil
 	}
 
 	if !field.IsZero() {
-		return interimValue, nil
+		return proposedValue, nil
 	}
 
 	_, required := field.LookupTag("conf", "required")
 
-	if required && interimValue == nil {
+	if required && proposedValue == nil {
 		return nil, fmt.Errorf("structconf: required field %s is not set", field.Name())
 	}
 
-	return interimValue, nil
+	return proposedValue, nil
 }
