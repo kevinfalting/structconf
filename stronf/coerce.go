@@ -137,6 +137,6 @@ func coerceString(field Field, s string) (any, error) {
 		return uintptr(u), nil
 
 	default:
-		return nil, fmt.Errorf("structconf: unsuported type: %q", field.Kind().String())
+		return nil, fmt.Errorf("structconf: unsupported type: %q", field.Kind().String())
 	}
 }
