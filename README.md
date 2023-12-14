@@ -34,12 +34,6 @@ The precedence of the default configuration is applied in the following order:
 1. Environment Variable
 1. Command Line Flag
 
-### Secrets
-
-The builtin secret handler expects base64 encoded RSA strings, prefixed with `secret://`, to look like `secret://<some_base64_encoded_rsa_encrypted_ciphertext>`.
-
-The advantage of this is that handlers can read in encrypted or decrypted values, and once they get to the secret handler, it will either skip it or decrypt a value prefixed with `secret://`, since you may want to provide a decrypted value as an environment variable or flag. You can also provide an encrypted value with that prefix as an environment variable or flag, and it will be decrypted using the provided key.
-
 ## Supporting Unsupported Types
 
 The parser will prioritize value fields that satisfy the `encoding.TextUnmarshaler` or `encoding.BinaryUnmarshaler`, in that order. If you need to support an unsupported type like a map or slice, then create a user defined type that satisfies either interface.

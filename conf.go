@@ -37,13 +37,6 @@ func New[T any](opts ...confOptionFunc) (*Conf[T], error) {
 		},
 	}
 
-	if confOpt.rsaPrivateKey != nil {
-		conf.Handlers = append(conf.Handlers, &confhandler.RSAHandler{
-			PrivateKey: confOpt.rsaPrivateKey,
-			Label:      confOpt.rsaLabel,
-		})
-	}
-
 	return &conf, nil
 }
 
