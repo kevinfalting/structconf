@@ -2,63 +2,56 @@ package structconf
 
 import (
 	"context"
+	"flag"
 
 	"github.com/kevinfalting/structconf/confhandler"
 	"github.com/kevinfalting/structconf/stronf"
 )
 
-// Conf holds the handlers for parsing structs. Handlers should be provided in
-// the order they're intended to be run, each taking precedence over the last.
-type Conf[T any] struct {
-	Handlers []stronf.Handler
-}
-
-var _ stronf.Handler = (*Conf[any])(nil)
-
-// New returns a Conf initialized with all of the default Handlers to parse a
-// struct.
-func New[T any](opts ...confOptionFunc) (*Conf[T], error) {
-	var confOpt confOption
-	for _, opt := range opts {
-		opt(&confOpt)
-	}
-
-	flagHandler, err := confhandler.NewFlag[T](confOpt.flagSet)
-	if err != nil {
-		return nil, err
-	}
-
-	conf := Conf[T]{
-		Handlers: []stronf.Handler{
-			confhandler.EnvironmentVariable{},
-			flagHandler,
-			confhandler.Default{},
-			confhandler.Required{},
-		},
-	}
-
-	return &conf, nil
-}
-
-// Handle will call all of the configured handlers on a single field.
-func (c *Conf[T]) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
-	handler := stronf.CombineHandlers(c.Handlers...)
-	return handler.Handle(ctx, field, proposedValue)
-}
-
-// Parse will walk every field and nested field in the provided struct appling
-// the handlers to each field.
-func (c *Conf[T]) Parse(ctx context.Context, cfg *T) error {
+// Parse will set any settable fields in the provided struct based on the
+// results of the default handlers.
+func Parse(ctx context.Context, cfg any, optionFuncs ...optionFunc) error {
 	fields, err := stronf.SettableFields(cfg)
 	if err != nil {
 		return err
 	}
 
+	var opt option
+	for _, optionFunc := range optionFuncs {
+		optionFunc(&opt)
+	}
+
+	flagHandler := confhandler.NewFlag(opt.flagSet)
+	if err := flagHandler.DefineFlags(fields); err != nil {
+		return err
+	}
+
+	handler := stronf.CombineHandlers(
+		confhandler.EnvironmentVariable{},
+		flagHandler,
+		confhandler.Default{},
+		confhandler.Required{},
+	)
+
 	for _, field := range fields {
-		if err := field.Parse(ctx, c); err != nil {
+		if err := field.Parse(ctx, handler); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+type option struct {
+	flagSet *flag.FlagSet
+}
+
+type optionFunc func(opt *option)
+
+// WithFlagSet is a functional option for passing a [flag.FlagSet] to the flag
+// handler.
+func WithFlagSet(fset *flag.FlagSet) optionFunc {
+	return func(opt *option) {
+		opt.flagSet = fset
+	}
 }

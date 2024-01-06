@@ -10,184 +10,133 @@ import (
 	"github.com/kevinfalting/structconf/stronf"
 )
 
-// Flag is the handler for parsing command line flags.
+var _ stronf.Handler = (*Flag)(nil)
+
+// Flag maintains the state of the flag handler, providing the methods required
+// to interact with it.
 type Flag struct {
-	flagSet     *flag.FlagSet
-	parsedFlags map[string]func() any
+	fset *flag.FlagSet
 }
 
-// NewFlag returns an initialized Flag handler.
-func NewFlag[T any](fset *flag.FlagSet) (*Flag, error) {
+// NewFlag returns an initialized [Flag] with the provided [flag.FlagSet]. If no
+// [flag.FlagSet] is provided, one is initialized the same way the stdlib does.
+func NewFlag(fset *flag.FlagSet) *Flag {
 	if fset == nil {
 		fset = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	}
 
-	a := new(T)
-
-	fields, err := stronf.SettableFields(a)
-	if err != nil {
-		return nil, err
+	flag := Flag{
+		fset: fset,
 	}
 
-	parsedFlags := make(map[string]func() any)
-
-	for _, field := range fields {
-		flagName, ok := field.LookupTag("conf", "flag")
-		if !ok {
-			continue
-		}
-
-		usage, _ := field.LookupTag("conf", "usage")
-
-		switch field.Kind() {
-		case reflect.Bool:
-			var b bool
-			db, err := defaultValFn[bool](field)
-			if err != nil {
-				return nil, err
-			}
-			fset.BoolVar(&b, flagName, db, usage)
-			parsedFlags[flagName] = func() any { return b }
-
-		case reflect.Float64:
-			var f float64
-			df, err := defaultValFn[float64](field)
-			if err != nil {
-				return nil, err
-			}
-			fset.Float64Var(&f, flagName, df, usage)
-			parsedFlags[flagName] = func() any { return f }
-
-		case reflect.Int64:
-			var i int64
-			di, err := defaultValFn[int64](field)
-			if err != nil {
-				return nil, err
-			}
-			fset.Int64Var(&i, flagName, di, usage)
-			parsedFlags[flagName] = func() any { return i }
-
-		case reflect.Int:
-			var i int
-			di, err := defaultValFn[int](field)
-			if err != nil {
-				return nil, err
-			}
-			fset.IntVar(&i, flagName, di, usage)
-			parsedFlags[flagName] = func() any { return i }
-
-		case reflect.String:
-			var s string
-			ds, err := defaultValFn[string](field)
-			if err != nil {
-				return nil, err
-			}
-			fset.StringVar(&s, flagName, ds, usage)
-			parsedFlags[flagName] = func() any { return s }
-
-		case reflect.Uint64:
-			var u uint64
-			du, err := defaultValFn[uint64](field)
-			if err != nil {
-				return nil, err
-			}
-			fset.Uint64Var(&u, flagName, du, usage)
-			parsedFlags[flagName] = func() any { return u }
-
-		case reflect.Uint:
-			var u uint
-			du, err := defaultValFn[uint](field)
-			if err != nil {
-				return nil, err
-			}
-			fset.UintVar(&u, flagName, du, usage)
-			parsedFlags[flagName] = func() any { return u }
-
-		default:
-			parseFlagValueFn := func(flagName string, field stronf.Field) func(string) error {
-				return func(s string) error {
-					parsedFlags[flagName] = func() any { return s }
-					return nil
-				}
-			}
-
-			fset.Func(flagName, usage, parseFlagValueFn(flagName, field))
-		}
-	}
-
-	f := Flag{
-		flagSet:     fset,
-		parsedFlags: parsedFlags,
-	}
-
-	return &f, nil
+	return &flag
 }
 
-var _ stronf.Handler = (*Flag)(nil)
-
+// Handle will lookup and set a field's flag value if one was set.
 func (f *Flag) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+	if !f.fset.Parsed() {
+		if err := f.Parse(os.Args[1:]); err != nil {
+			return nil, err
+		}
+	}
+
 	flagName, ok := field.LookupTag("conf", "flag")
 	if !ok {
 		return proposedValue, nil
 	}
 
-	if err := f.Parse(); err != nil {
-		return nil, err
+	stdFlag := f.fset.Lookup(flagName)
+	if stdFlag == nil || stdFlag.Value == nil {
+		return proposedValue, nil
 	}
 
-	valueFn, ok := f.parsedFlags[flagName]
+	fVal, ok := stdFlag.Value.(*flagVal)
 	if !ok {
 		return proposedValue, nil
 	}
 
-	return valueFn(), nil
-}
-
-// Parse will parse the flags associated with this Flag handler. If no args are
-// provided, it will use os.Args. This is safe to call multiple times, first call
-// wins.
-func (f *Flag) Parse(args ...string) error {
-	if !f.flagSet.Parsed() {
-		if len(args) == 0 {
-			args = os.Args[1:]
-		}
-
-		if err := f.flagSet.Parse(args); err != nil {
-			return err
-		}
+	if fVal.val != nil {
+		return fVal.val, nil
 	}
 
-	// TODO: This is called on every call to Handle, which isn't necessary. But,
-	// is it a problem? Probably not. I'll optimize this when it's a problem.
-	commandLineProvidedFlags := make(map[string]bool)
+	if proposedValue != nil {
+		return proposedValue, nil
+	}
 
-	f.flagSet.Visit(func(f *flag.Flag) {
-		commandLineProvidedFlags[f.Name] = true
-	})
+	return stdFlag.Value.String(), nil
+}
 
-	for flagName := range f.parsedFlags {
-		if _, exists := commandLineProvidedFlags[flagName]; !exists {
-			delete(f.parsedFlags, flagName)
+// Parse passes the args to the underlying [flag.FlagSet]'s Parse method.
+func (f *Flag) Parse(args []string) error {
+	return f.fset.Parse(args)
+}
+
+// DefineFlags will define any flags on the [Flag]'s underlying [flag.FlagSet]
+// based on the [stronf.Field]s that are passed in.
+func (f *Flag) DefineFlags(fields []stronf.Field) error {
+	for _, field := range fields {
+		if err := f.defineFlag(field); err != nil {
+			return err
 		}
 	}
 
 	return nil
 }
 
-func defaultValFn[T any](field stronf.Field) (T, error) {
-	defaultVal, ok := field.LookupTag("conf", "default")
+func (f *Flag) defineFlag(field stronf.Field) error {
+	flagName, ok := field.LookupTag("conf", "flag")
 	if !ok {
-		return *new(T), nil
+		return nil
 	}
 
-	result, err := stronf.Coerce(field, defaultVal)
+	defaultVal, ok := field.LookupTag("conf", "default")
+	if (!ok && field.Value() != nil) || !field.IsZero() {
+		defaultVal = fmt.Sprintf("%v", field.Value())
+	}
+
+	usage, ok := field.LookupTag("conf", "usage")
+	if !ok {
+		usage = fmt.Sprintf("%s is a `%T`", flagName, field.Value())
+	}
+
+	fVal := flagVal{
+		field:      field,
+		val:        nil,
+		defaultVal: defaultVal,
+	}
+
+	f.fset.Var(&fVal, flagName, usage)
+
+	return nil
+}
+
+var _ flag.Value = (*flagVal)(nil)
+
+type flagVal struct {
+	field      stronf.Field
+	val        any
+	defaultVal string
+}
+
+func (f *flagVal) Set(s string) error {
+	val, err := stronf.Coerce(f.field, s)
 	if err != nil {
-		return *new(T), nil
+		return err
 	}
 
-	if _, ok := result.(T); !ok {
-		return *new(T), fmt.Errorf("structconf: value of type %T is not %T", result, *new(T))
+	f.val = val
+
+	return nil
+}
+
+func (f *flagVal) String() string {
+	if f.val == nil {
+		return f.defaultVal
 	}
 
-	return result.(T), nil
+	return fmt.Sprintf("%v", f.val)
+}
+
+func (f *flagVal) IsBoolFlag() bool {
+	return f.field.Kind() == reflect.Bool
 }
