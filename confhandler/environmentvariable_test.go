@@ -2,6 +2,7 @@ package confhandler_test
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/kevinfalting/structconf/confhandler"
@@ -10,108 +11,93 @@ import (
 
 func TestEnvironmentVariable(t *testing.T) {
 	type A struct {
-		Int int `conf:"env:INT"`
+		Int   int `conf:"env:INT"`
+		NoTag int
 	}
 
-	t.Run("env var set", func(t *testing.T) {
-		var a A
+	testCases := map[string]struct {
+		input         A
+		proposedValue any
+		envKey        string
+		envVal        string
+		expect        A
+	}{
+		"nothing set": {},
+		"nothing set with proposedValue should set proposedValue": {
+			proposedValue: 5,
+			expect: A{
+				Int:   5,
+				NoTag: 5,
+			},
+		},
+		"env set should set to env val": {
+			envKey: "INT",
+			envVal: "22",
+			expect: A{
+				Int: 22,
+			},
+		},
+		"env set and proposedValue should set env": {
+			envKey:        "INT",
+			envVal:        "22",
+			proposedValue: 5,
+			expect: A{
+				Int:   22,
+				NoTag: 5,
+			},
+		},
+		"env set and proposedValue with field value should ignore field value": {
+			input: A{
+				Int:   88,
+				NoTag: 222,
+			},
+			envKey:        "INT",
+			envVal:        "22",
+			proposedValue: 5,
+			expect: A{
+				Int:   22,
+				NoTag: 5,
+			},
+		},
+		"only field values should be left alone": {
+			input: A{
+				Int:   88,
+				NoTag: 222,
+			},
+			expect: A{
+				Int:   88,
+				NoTag: 222,
+			},
+		},
+	}
 
-		fields, err := stronf.SettableFields(&a)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
+	for name, test := range testCases {
+		t.Run(name, func(t *testing.T) {
+			fields, err := stronf.SettableFields(&test.input)
+			if err != nil {
+				t.Fatal("failed to SettableFields:", err)
+			}
 
-		if len(fields) != 1 {
-			t.Fatalf("expected 1 field, got %d", len(fields))
-		}
+			var envHandler confhandler.EnvironmentVariable
+			proposedValueEnvHandler := func(testProposedValue any) stronf.HandleFunc {
+				return func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+					return envHandler.Handle(ctx, field, testProposedValue)
+				}
+			}(test.proposedValue)
 
-		t.Setenv("INT", "5")
+			if len(test.envKey) != 0 {
+				t.Setenv(test.envKey, test.envVal)
+			}
 
-		var ev confhandler.EnvironmentVariable
+			for _, field := range fields {
+				if err := field.Parse(context.Background(), proposedValueEnvHandler); err != nil {
+					t.Error("expected no error, got:", err)
+				}
+			}
 
-		result, err := ev.Handle(context.Background(), fields[0], nil)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-
-		if result != "5" {
-			t.Errorf("expected result 5, got %#v", result)
-		}
-	})
-
-	t.Run("no env var set", func(t *testing.T) {
-		var a A
-
-		fields, err := stronf.SettableFields(&a)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-
-		if len(fields) != 1 {
-			t.Fatalf("expected 1 field, got %d", len(fields))
-		}
-
-		var ev confhandler.EnvironmentVariable
-
-		result, err := ev.Handle(context.Background(), fields[0], nil)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-
-		if result != nil {
-			t.Errorf("expected nil result, got %+v", result)
-		}
-	})
-
-	t.Run("env var set wrong type - empty string", func(t *testing.T) {
-		var a A
-
-		fields, err := stronf.SettableFields(&a)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-
-		if len(fields) != 1 {
-			t.Fatalf("expected 1 field, got %d", len(fields))
-		}
-
-		t.Setenv("INT", "")
-
-		var ev confhandler.EnvironmentVariable
-
-		result, err := ev.Handle(context.Background(), fields[0], "1234")
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-
-		if result != "" {
-			t.Errorf("expected empty string, got %#v", result)
-		}
-	})
-
-	t.Run("field has no env tag", func(t *testing.T) {
-		b := struct {
-			Int int `conf:"asdf"`
-		}{}
-
-		fields, err := stronf.SettableFields(&b)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-
-		if len(fields) != 1 {
-			t.Fatalf("expected 1 field, got %d", len(fields))
-		}
-
-		var ev confhandler.EnvironmentVariable
-
-		result, err := ev.Handle(context.Background(), fields[0], nil)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-
-		if result != nil {
-			t.Errorf("expected nil result, got %+v", result)
-		}
-	})
+			if !reflect.DeepEqual(test.expect, test.input) {
+				t.Errorf("\nexpected:\n%+v\ngot:\n%+v", test.expect, test.input)
+			}
+		})
+	}
 }
