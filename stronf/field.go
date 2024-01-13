@@ -88,12 +88,12 @@ func (f Field) LookupTag(key, tag string) (string, bool) {
 // Parse will call the handler against the field and set the field to the
 // returned handler value. If the handler returns nil, no change is made to the
 // field.
-func (f Field) Parse(ctx context.Context, handler Handler) error {
+func (f Field) Parse(ctx context.Context, handler HandleFunc) error {
 	if handler == nil {
 		return errors.New("structconf: nil handler")
 	}
 
-	val, err := handler.Handle(ctx, f, nil)
+	val, err := handler(ctx, f, nil)
 	if err != nil {
 		return err
 	}

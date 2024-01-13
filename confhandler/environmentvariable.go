@@ -11,8 +11,6 @@ import (
 // 'env' key provided in the struct tag.
 type EnvironmentVariable struct{}
 
-var _ stronf.Handler = EnvironmentVariable{}
-
 func (ev EnvironmentVariable) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 	environmentVariable, ok := field.LookupTag("conf", "env")
 	if !ok {

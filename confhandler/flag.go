@@ -10,8 +10,6 @@ import (
 	"github.com/kevinfalting/structconf/stronf"
 )
 
-var _ stronf.Handler = (*Flag)(nil)
-
 // Flag maintains the state of the flag handler, providing the methods required
 // to interact with it.
 type Flag struct {

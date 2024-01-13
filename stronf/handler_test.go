@@ -12,7 +12,7 @@ func TestCombineHandlers(t *testing.T) {
 	// Test with no handlers (nil)
 	t.Run("no handlers", func(t *testing.T) {
 		h := stronf.CombineHandlers()
-		result, err := h.Handle(context.Background(), stronf.Field{}, nil)
+		result, err := h(context.Background(), stronf.Field{}, nil)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -23,10 +23,10 @@ func TestCombineHandlers(t *testing.T) {
 
 	// Test with one handler
 	t.Run("one handler", func(t *testing.T) {
-		h := stronf.CombineHandlers(stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+		h := stronf.CombineHandlers(stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 			return "one", nil
 		}))
-		result, err := h.Handle(context.Background(), stronf.Field{}, nil)
+		result, err := h(context.Background(), stronf.Field{}, nil)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -38,14 +38,14 @@ func TestCombineHandlers(t *testing.T) {
 	// Test with two handlers
 	t.Run("two handlers", func(t *testing.T) {
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "first", nil
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "second", nil
 			}),
 		)
-		result, err := h.Handle(context.Background(), stronf.Field{}, nil)
+		result, err := h(context.Background(), stronf.Field{}, nil)
 		if err != nil {
 			t.Errorf("Expected no error, got %v", err)
 		}
@@ -58,14 +58,14 @@ func TestCombineHandlers(t *testing.T) {
 	t.Run("error from handler", func(t *testing.T) {
 		expectedError := errors.New("handler error")
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return nil, expectedError
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "should not be called", nil
 			}),
 		)
-		_, err := h.Handle(context.Background(), stronf.Field{}, nil)
+		_, err := h(context.Background(), stronf.Field{}, nil)
 		if err != expectedError {
 			t.Errorf("Expected error %v, got %v", expectedError, err)
 		}
@@ -74,17 +74,17 @@ func TestCombineHandlers(t *testing.T) {
 	// Test the result of one handler is passed into the proposedValue of the next
 	t.Run("pass interim value", func(t *testing.T) {
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "first", nil
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				if proposedValue != "first" {
 					t.Errorf("Expected 'first', got %v", proposedValue)
 				}
 				return "second", nil
 			}),
 		)
-		result, err := h.Handle(context.Background(), stronf.Field{}, nil)
+		result, err := h(context.Background(), stronf.Field{}, nil)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -96,14 +96,14 @@ func TestCombineHandlers(t *testing.T) {
 	// Test the final proposedValue is returned
 	t.Run("final interim value", func(t *testing.T) {
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "first", nil
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				return "final", nil
 			}),
 		)
-		result, err := h.Handle(context.Background(), stronf.Field{}, nil)
+		result, err := h(context.Background(), stronf.Field{}, nil)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}
@@ -116,16 +116,16 @@ func TestCombineHandlers(t *testing.T) {
 	t.Run("handler order", func(t *testing.T) {
 		var order []string
 		h := stronf.CombineHandlers(
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				order = append(order, "first")
 				return nil, nil
 			}),
-			stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 				order = append(order, "second")
 				return nil, nil
 			}),
 		)
-		_, err := h.Handle(context.Background(), stronf.Field{}, nil)
+		_, err := h(context.Background(), stronf.Field{}, nil)
 		if err != nil {
 			t.Errorf("Unexpected error: %v", err)
 		}

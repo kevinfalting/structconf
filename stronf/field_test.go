@@ -176,7 +176,7 @@ func TestField_Parse(t *testing.T) {
 	})
 
 	t.Run("should return an error if handler returns error and not update the field", func(t *testing.T) {
-		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+		var handler stronf.HandleFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 			return nil, errors.New("an error")
 		}
 
@@ -210,7 +210,7 @@ func TestField_Parse(t *testing.T) {
 	})
 
 	t.Run("should not override struct value if handler returns nil", func(t *testing.T) {
-		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+		var handler stronf.HandleFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 			// This additionally ensures that Field_Parse is passing in <nil> as the
 			// initial proposedValue
 			return proposedValue, nil
@@ -247,7 +247,7 @@ func TestField_Parse(t *testing.T) {
 
 	t.Run("should set value returned by handler", func(t *testing.T) {
 		expect := "i'm a value returned by the handler"
-		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+		var handler stronf.HandleFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 			return expect, nil
 		}
 
@@ -279,7 +279,7 @@ func TestField_Parse(t *testing.T) {
 	})
 
 	t.Run("should error if value returned by handler is wrong type", func(t *testing.T) {
-		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+		var handler stronf.HandleFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 			return 55, nil
 		}
 
@@ -323,7 +323,7 @@ func TestField_Parse(t *testing.T) {
 			t.Fatal("failed to Parse:", err)
 		}
 
-		var handler stronf.HandlerFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+		var handler stronf.HandleFunc = func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 			return []byte(expectTimeString), nil
 		}
 

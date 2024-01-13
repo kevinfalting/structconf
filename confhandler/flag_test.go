@@ -92,8 +92,8 @@ func TestFlags(t *testing.T) {
 				t.Fatalf("expected no error, got %v", err)
 			}
 
-			proposedValueFlagHandler := func(testProposedValue any) stronf.Handler {
-				return stronf.HandlerFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+			proposedValueFlagHandler := func(testProposedValue any) stronf.HandleFunc {
+				return stronf.HandleFunc(func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 					return flagsHandler.Handle(ctx, field, testProposedValue)
 				})
 			}(test.proposedValue)

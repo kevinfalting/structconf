@@ -27,10 +27,10 @@ func Parse(ctx context.Context, cfg any, optionFuncs ...optionFunc) error {
 	}
 
 	handler := stronf.CombineHandlers(
-		confhandler.EnvironmentVariable{},
-		flagHandler,
-		confhandler.Default{},
-		confhandler.Required{},
+		confhandler.EnvironmentVariable{}.Handle,
+		flagHandler.Handle,
+		confhandler.Default{}.Handle,
+		confhandler.Required{}.Handle,
 	)
 
 	for _, field := range fields {
