@@ -10,95 +10,82 @@ import (
 )
 
 func TestDefault(t *testing.T) {
-	t.Run("empty default tag", func(t *testing.T) {
-		A := struct {
+	type A struct {
+		Int   int `conf:"default:2"`
+		NoTag int
+	}
+
+	tests := map[string]struct {
+		input         A
+		proposedValue any
+		expect        A
+	}{
+		"nothing set should set to defaults": {
+			expect: A{
+				Int: 2,
+			},
+		},
+		"proposedValue should be set no matter what else is set": {
+			input: A{
+				Int:   22,
+				NoTag: 55,
+			},
+			proposedValue: 88,
+			expect: A{
+				Int:   88,
+				NoTag: 88,
+			},
+		},
+		"field value set takes precedence over default": {
+			input: A{
+				Int: 22,
+			},
+			expect: A{
+				Int: 22,
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			var defaultHandler confhandler.Default
+			proposedValueDefaultHandler := func(testProposedValue any) stronf.HandleFunc {
+				return func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+					return defaultHandler.Handle(ctx, field, testProposedValue)
+				}
+			}(test.proposedValue)
+
+			fields, err := stronf.SettableFields(&test.input)
+			if err != nil {
+				t.Fatal("failed to SettableFields:", err)
+			}
+
+			for _, field := range fields {
+				if err := field.Parse(context.Background(), proposedValueDefaultHandler); err != nil {
+					t.Error("expected no error, got:", err)
+				}
+			}
+
+			if !reflect.DeepEqual(test.expect, test.input) {
+				t.Errorf("\nexpected:\n%+v\ngot:\n%+v", test.expect, test.input)
+			}
+		})
+	}
+
+	t.Run("empty default value", func(t *testing.T) {
+		type B struct {
 			Int int `conf:"default"`
-		}{}
+		}
 
-		fields, err := stronf.SettableFields(&A)
+		var b B
+		fields, err := stronf.SettableFields(&b)
 		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-		if len(fields) != 1 {
-			t.Fatalf("expected 1 field, got %d", len(fields))
+			t.Fatal("failed to SettableFields:", err)
 		}
 
-		result, err := confhandler.Default{}.Handle(context.Background(), fields[0], nil)
+		err = fields[0].Parse(context.Background(), confhandler.Default{}.Handle)
 		if err == nil {
-			t.Errorf("expected error, got %v", err)
-		}
-		if result != nil {
-			t.Errorf("expected result to be nil, got %+v", result)
-		}
-	})
-
-	t.Run("default tag applies when zero", func(t *testing.T) {
-		A := struct {
-			Int int `conf:"default:5"`
-		}{}
-
-		fields, err := stronf.SettableFields(&A)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-		if len(fields) != 1 {
-			t.Fatalf("expected 1 field, got %d", len(fields))
-		}
-
-		result, err := confhandler.Default{}.Handle(context.Background(), fields[0], nil)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-
-		if result != "5" {
-			t.Errorf("expected result to be 5, got %#v", result)
-		}
-	})
-
-	t.Run("default tag does not apply when field is non-zero", func(t *testing.T) {
-		A := struct {
-			Int int `conf:"default:5"`
-		}{
-			Int: 88,
-		}
-
-		fields, err := stronf.SettableFields(&A)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-		if len(fields) != 1 {
-			t.Fatalf("expected 1 field, got %d", len(fields))
-		}
-
-		result, err := confhandler.Default{}.Handle(context.Background(), fields[0], nil)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-		if !reflect.DeepEqual(88, A.Int) {
-			t.Errorf("expected field to be 88, got %+v", result)
-		}
-	})
-
-	t.Run("default does not apply when handler returns value", func(t *testing.T) {
-		A := struct {
-			Int int `conf:"default:5"`
-		}{}
-
-		fields, err := stronf.SettableFields(&A)
-		if err != nil {
-			t.Fatalf("expected no error, got %v", err)
-		}
-		if len(fields) != 1 {
-			t.Fatalf("expected 1 field, got %d", len(fields))
-		}
-
-		result, err := confhandler.Default{}.Handle(context.Background(), fields[0], 88)
-		if err != nil {
-			t.Errorf("expected no error, got %v", err)
-		}
-
-		if !reflect.DeepEqual(result, 88) {
-			t.Errorf("expected field to be 88, got %+v (%T)", result, result)
+			t.Error("expected error, got nil")
 		}
 	})
 }
