@@ -3,7 +3,6 @@ package confhandler
 import (
 	"context"
 	"fmt"
-	"reflect"
 
 	"github.com/kevinfalting/structconf/stronf"
 )
@@ -14,19 +13,14 @@ import (
 type Required struct{}
 
 func (h Required) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
-	if proposedValue != nil && reflect.ValueOf(proposedValue).IsZero() {
-		return proposedValue, nil
-	}
-
-	if !field.IsZero() {
+	if proposedValue != nil {
 		return proposedValue, nil
 	}
 
 	_, required := field.LookupTag("conf", "required")
-
-	if required && proposedValue == nil {
+	if required && field.IsZero() {
 		return nil, fmt.Errorf("structconf: required field %s is not set", field.Name())
 	}
 
-	return proposedValue, nil
+	return field.Value(), nil
 }
