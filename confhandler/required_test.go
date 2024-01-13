@@ -2,6 +2,7 @@ package confhandler_test
 
 import (
 	"context"
+	"reflect"
 	"testing"
 
 	"github.com/kevinfalting/structconf/confhandler"
@@ -9,95 +10,77 @@ import (
 )
 
 func TestRequired(t *testing.T) {
-	t.Run("required", func(t *testing.T) {
-		t.Run("nil", func(t *testing.T) {
-			A := struct {
-				Int int `conf:"required"`
-			}{}
+	type A struct {
+		Int   int `conf:"required"`
+		NoTag int
+	}
 
-			fields, err := stronf.SettableFields(&A)
+	tests := map[string]struct {
+		input         A
+		proposedValue any
+		expect        A
+	}{
+		"field value set should be okay": {
+			input: A{
+				Int: 2,
+			},
+			expect: A{
+				Int: 2,
+			},
+		},
+		"proposedValue should overrid all other values": {
+			input: A{
+				Int:   2,
+				NoTag: 22,
+			},
+			proposedValue: 55,
+			expect: A{
+				Int:   55,
+				NoTag: 55,
+			},
+		},
+	}
+
+	for name, test := range tests {
+		t.Run(name, func(t *testing.T) {
+			requiredHandler := confhandler.Required{}
+			proposedValueRequiredHandler := func(testProposedValue any) stronf.HandleFunc {
+				return func(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
+					return requiredHandler.Handle(ctx, field, testProposedValue)
+				}
+			}(test.proposedValue)
+
+			fields, err := stronf.SettableFields(&test.input)
 			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-			if len(fields) != 1 {
-				t.Fatalf("expected 1 field, got %d", len(fields))
+				t.Fatal("failed to SettableFields:", err)
 			}
 
-			result, err := confhandler.Required{}.Handle(context.Background(), fields[0], nil)
-			if err == nil {
-				t.Errorf("expected an error, got %v", err)
+			for _, field := range fields {
+				if err := field.Parse(context.Background(), proposedValueRequiredHandler); err != nil {
+					t.Error("expected no error, got:", err)
+				}
 			}
-			if result != nil {
-				t.Errorf("expected result to be nil, got %+v", result)
+
+			if !reflect.DeepEqual(test.expect, test.input) {
+				t.Errorf("\nexpected:\n%+v\ngot:\n%+v", test.expect, test.input)
 			}
 		})
+	}
 
-		t.Run("0", func(t *testing.T) {
-			A := struct {
-				Int int `conf:"required"`
-			}{}
+	t.Run("required and zero value with no proposedValue", func(t *testing.T) {
+		type B struct {
+			Int int `conf:"required"`
+		}
 
-			fields, err := stronf.SettableFields(&A)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-			if len(fields) != 1 {
-				t.Fatalf("expected 1 field, got %d", len(fields))
-			}
+		var b B
+		fields, err := stronf.SettableFields(&b)
+		if err != nil {
+			t.Fatal("failed to SettableFields:", err)
+		}
 
-			result, err := confhandler.Required{}.Handle(context.Background(), fields[0], 0)
-			if err != nil {
-				t.Errorf("expected no err, got %v", err)
-			}
-			if result == nil {
-				t.Errorf("expected result to not be nil, got %+v", result)
-			}
-		})
-	})
-
-	t.Run("no tags, allow any with no error", func(t *testing.T) {
-		t.Run("return nil", func(t *testing.T) {
-			A := struct {
-				Int int `conf:""`
-			}{}
-
-			fields, err := stronf.SettableFields(&A)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-			if len(fields) != 1 {
-				t.Fatalf("expected 1 field, got %d", len(fields))
-			}
-
-			result, err := confhandler.Required{}.Handle(context.Background(), fields[0], nil)
-			if err != nil {
-				t.Errorf("expected no error, got %v", err)
-			}
-			if result != nil {
-				t.Errorf("expected result to be nil, got %+v", result)
-			}
-		})
-
-		t.Run("return 0", func(t *testing.T) {
-			A := struct {
-				Int int `conf:""`
-			}{}
-
-			fields, err := stronf.SettableFields(&A)
-			if err != nil {
-				t.Fatalf("expected no error, got %v", err)
-			}
-			if len(fields) != 1 {
-				t.Fatalf("expected 1 field, got %d", len(fields))
-			}
-
-			result, err := confhandler.Required{}.Handle(context.Background(), fields[0], 0)
-			if err != nil {
-				t.Errorf("expected no error, got %v", err)
-			}
-			if result == nil {
-				t.Errorf("expected result to not be nil, got %+v", result)
-			}
-		})
+		err = fields[0].Parse(context.Background(), confhandler.Required{}.Handle)
+		if err == nil {
+			t.Error("expected error, got nil")
+		}
 	})
 }
