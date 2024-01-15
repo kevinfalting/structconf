@@ -48,7 +48,7 @@ func (f Field) set(val any) error {
 	if f.unmarshalerFunc != nil {
 		data, ok := val.([]byte)
 		if !ok {
-			return fmt.Errorf("structconf: unmarshalable field %s must be provided a byte slice, got %T", f.Name(), val)
+			return fmt.Errorf("structconf: unmarshalable field %q must be provided a byte slice, got %T", f.Name(), val)
 		}
 
 		if err := f.unmarshalerFunc(data); err != nil {
@@ -61,7 +61,7 @@ func (f Field) set(val any) error {
 	rVal := reflect.ValueOf(val)
 
 	if f.Kind() != rVal.Kind() {
-		return fmt.Errorf("structconf: type mismatch, expected %q, got %q", f.Kind(), rVal.Kind())
+		return fmt.Errorf("structconf: type mismatch, expected %q, got %q for field %q", f.Kind(), rVal.Kind(), f.Name())
 	}
 
 	f.rVal.Set(rVal)

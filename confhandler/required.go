@@ -19,7 +19,7 @@ func (h Required) Handle(ctx context.Context, field stronf.Field, proposedValue 
 
 	_, required := field.LookupTag("conf", "required")
 	if required && field.IsZero() {
-		return nil, fmt.Errorf("structconf: required field %s is not set", field.Name())
+		return nil, fmt.Errorf("structconf: required field %q is not set", field.Name())
 	}
 
 	return nil, nil

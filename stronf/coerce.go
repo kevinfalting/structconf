@@ -12,7 +12,7 @@ func Coerce(field Field, val any) (any, error) {
 	rVal := reflect.ValueOf(val)
 	if field.unmarshalerFunc != nil {
 		if !rVal.CanConvert(reflect.SliceOf(reflect.TypeOf(byte(0)))) {
-			return nil, fmt.Errorf("structconf: cannot convert %q to []byte", rVal.Kind())
+			return nil, fmt.Errorf("structconf: cannot convert %q to []byte for field %q", rVal.Kind(), field.Name())
 		}
 
 		return rVal.Convert(reflect.SliceOf(reflect.TypeOf(byte(0)))).Interface(), nil
@@ -137,6 +137,6 @@ func coerceString(field Field, s string) (any, error) {
 		return uintptr(u), nil
 
 	default:
-		return nil, fmt.Errorf("structconf: unsupported type: %q", field.Kind().String())
+		return nil, fmt.Errorf("structconf: unsupported type %q for field %q", field.Kind().String(), field.Value())
 	}
 }
