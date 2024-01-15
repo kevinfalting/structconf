@@ -9,9 +9,10 @@ import (
 
 // Default is a handler which will set the default value for the field as long
 // as no value is being proposed and the field is the zero value for it's type.
-// It's typically best just before the Required handler.
+// It's typically best just before the [Required] handler.
 type Default struct{}
 
+// Handle is the [stronf.HandleFunc] implementation of the [Default] handler.
 func (h Default) Handle(ctx context.Context, field stronf.Field, proposedValue any) (any, error) {
 	if proposedValue != nil {
 		return proposedValue, nil

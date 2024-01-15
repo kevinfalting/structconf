@@ -29,12 +29,12 @@ func (f Field) IsZero() bool {
 	return f.rVal.IsZero()
 }
 
-// Kind returns the reflect package's Kind.
+// Kind returns the field's [reflect.Kind].
 func (f Field) Kind() reflect.Kind {
 	return f.rVal.Kind()
 }
 
-// Type returns the reflect package's Type.
+// Type returns the field's [reflect.Type].
 func (f Field) Type() reflect.Type {
 	return f.rVal.Type()
 }
@@ -69,7 +69,8 @@ func (f Field) set(val any) error {
 }
 
 // LookupTag will return the value associated with the key and optional tag. See
-// examples for supported formats.
+// examples for supported formats. The bool reports if the key or tag was
+// explicitly found in the struct tag.
 func (f Field) LookupTag(key, tag string) (string, bool) {
 	value, ok := f.rStructField.Tag.Lookup(key)
 	if !ok {

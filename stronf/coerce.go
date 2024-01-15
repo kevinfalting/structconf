@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Coerce will attempt to convert the provided value into the field's value.
+// Coerce will attempt to convert the provided value into the field's type.
 func Coerce(field Field, val any) (any, error) {
 	rVal := reflect.ValueOf(val)
 	if field.unmarshalerFunc != nil {

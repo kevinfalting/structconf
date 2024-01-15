@@ -4,7 +4,7 @@ import (
 	"context"
 )
 
-// HandleFunc
+// HandleFunc is the function signature for working on a [Field].
 type HandleFunc func(ctx context.Context, field Field, proposedValue any) (any, error)
 
 // CombineHandlers will return a handler that calls each handler in the order

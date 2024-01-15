@@ -70,7 +70,11 @@ func (f *Flag) Parse(args []string) error {
 }
 
 // DefineFlags will define any flags on the [Flag]'s underlying [flag.FlagSet]
-// based on the [stronf.Field]s that are passed in.
+// based on the [stronf.Field]'s that are passed in. It looks for the "flag" tag
+// first for the name, the looks up the "default" tag for the default value. If
+// no "default" flag is provided, the [stronf.Field]'s value is used.
+// Optionally, a "usage" flag can be provided to provide custom usage
+// information.
 func (f *Flag) DefineFlags(fields []stronf.Field) error {
 	for _, field := range fields {
 		if err := f.defineFlag(field); err != nil {
