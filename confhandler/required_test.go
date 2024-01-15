@@ -29,7 +29,7 @@ func TestRequired(t *testing.T) {
 				Int: 2,
 			},
 		},
-		"proposedValue should overrid all other values": {
+		"proposedValue should override all other values": {
 			input: A{
 				Int:   2,
 				NoTag: 22,
