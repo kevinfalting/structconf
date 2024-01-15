@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"testing"
+	"time"
 
 	"github.com/kevinfalting/structconf/confhandler"
 	"github.com/kevinfalting/structconf/stronf"
@@ -81,6 +82,26 @@ func TestRequired(t *testing.T) {
 		err = fields[0].Parse(context.Background(), confhandler.Required{}.Handle)
 		if err == nil {
 			t.Error("expected error, got nil")
+		}
+	})
+
+	t.Run("not required and no proposed value should return no value to update", func(t *testing.T) {
+		// The nuance here is that this is a field that satisfies an interface and
+		// the Required handler was returning field.Value() which is a struct in
+		// this case. There's no reason to return a value for the field when the
+		// field is already that value.
+		type A struct {
+			Time time.Time
+		}
+
+		var a A
+		fields, err := stronf.SettableFields(&a)
+		if err != nil {
+			t.Fatal("expected no error, got:", err)
+		}
+
+		if err := fields[0].Parse(context.Background(), confhandler.Required{}.Handle); err != nil {
+			t.Error("expected no error, got:", err)
 		}
 	})
 }

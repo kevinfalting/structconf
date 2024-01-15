@@ -22,5 +22,5 @@ func (h Required) Handle(ctx context.Context, field stronf.Field, proposedValue 
 		return nil, fmt.Errorf("structconf: required field %s is not set", field.Name())
 	}
 
-	return field.Value(), nil
+	return nil, nil
 }
