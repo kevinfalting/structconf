@@ -19,12 +19,12 @@ func (h Default) Handle(ctx context.Context, field stronf.Field, proposedValue a
 	}
 
 	if !field.IsZero() {
-		return proposedValue, nil
+		return nil, nil
 	}
 
 	defaultVal, ok := field.LookupTag("conf", "default")
 	if !ok {
-		return proposedValue, nil
+		return nil, nil
 	}
 
 	if len(defaultVal) == 0 {
