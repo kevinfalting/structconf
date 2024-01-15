@@ -9,7 +9,8 @@ import (
 )
 
 // Parse will set any settable fields in the provided struct based on the
-// results of the default handlers.
+// results of the default handlers. By default, it checks for environment
+// variables, default, and required tags. Flags are optionally enabled.
 func Parse(ctx context.Context, cfg any, optionFuncs ...optionFunc) error {
 	fields, err := stronf.SettableFields(cfg)
 	if err != nil {
@@ -21,17 +22,25 @@ func Parse(ctx context.Context, cfg any, optionFuncs ...optionFunc) error {
 		optionFunc(&opt)
 	}
 
-	flagHandler := confhandler.NewFlag(opt.flagSet)
-	if err := flagHandler.DefineFlags(fields); err != nil {
-		return err
+	handlers := []stronf.HandleFunc{
+		confhandler.EnvironmentVariable{}.Handle,
 	}
 
-	handler := stronf.CombineHandlers(
-		confhandler.EnvironmentVariable{}.Handle,
-		flagHandler.Handle,
+	if opt.useFlags {
+		flagHandler := confhandler.NewFlag(opt.flagSet)
+		if err := flagHandler.DefineFlags(fields); err != nil {
+			return err
+		}
+
+		handlers = append(handlers, flagHandler.Handle)
+	}
+
+	handlers = append(handlers,
 		confhandler.Default{}.Handle,
 		confhandler.Required{}.Handle,
 	)
+
+	handler := stronf.CombineHandlers(handlers...)
 
 	for _, field := range fields {
 		if err := field.Parse(ctx, handler); err != nil {
@@ -43,15 +52,18 @@ func Parse(ctx context.Context, cfg any, optionFuncs ...optionFunc) error {
 }
 
 type option struct {
-	flagSet *flag.FlagSet
+	useFlags bool
+	flagSet  *flag.FlagSet
 }
 
 type optionFunc func(opt *option)
 
-// WithFlagSet is a functional option for passing a [flag.FlagSet] to the flag
-// handler.
+// WithFlagSet will signal to use the [confhandler.Flag] and optionally pass it
+// a [flag.FlagSet]. Passing a nil flagset will create and use one similar to
+// the stdlib flagset.
 func WithFlagSet(fset *flag.FlagSet) optionFunc {
 	return func(opt *option) {
+		opt.useFlags = true
 		opt.flagSet = fset
 	}
 }
