@@ -94,7 +94,9 @@ func (f *Flag) defineFlag(field stronf.Field) error {
 
 	usage, ok := field.LookupTag("conf", "usage")
 	if !ok {
-		usage = fmt.Sprintf("%s is a `%T`", flagName, field.Value())
+		usage = fmt.Sprintf("%s is a [`%T`]", flagName, field.Value())
+	} else {
+		usage = fmt.Sprintf("%s [`%T`]", usage, field.Value())
 	}
 
 	fVal := flagVal{
