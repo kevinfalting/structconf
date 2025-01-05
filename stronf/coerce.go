@@ -80,7 +80,7 @@ func coerceString(field Field, s string) (any, error) {
 		return int32(i), nil
 
 	case reflect.Int64:
-		if field.Type().String() == "time.Duration" {
+		if field.Type() == reflect.TypeOf(time.Second) {
 			d, err := time.ParseDuration(s)
 			if err != nil {
 				return nil, err
