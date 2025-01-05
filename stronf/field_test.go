@@ -50,7 +50,7 @@ func TestField_LookupTag(t *testing.T) {
 		}
 
 		field := fields[0]
-		v, ok := field.LookupTag("key", "")
+		v, ok := field.LookupTag("key")
 		if !ok {
 			t.Error("expected key to exist")
 		}
@@ -74,7 +74,7 @@ func TestField_LookupTag(t *testing.T) {
 		}
 
 		field := fields[0]
-		v, ok := field.LookupTag("key", "")
+		v, ok := field.LookupTag("key")
 		if !ok {
 			t.Error("expected key to exist")
 		}
@@ -140,7 +140,7 @@ func ExampleField_LookupTag() {
 		log.Println("should not recieve a value for a key that doesn't exist")
 	}
 
-	if val, ok := field.LookupTag("emptyKey", ""); ok {
+	if val, ok := field.LookupTag("emptyKey"); ok {
 		fmt.Printf("val: %q\n", val)
 	}
 

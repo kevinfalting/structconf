@@ -68,24 +68,6 @@ func (f Field) set(val any) error {
 	return nil
 }
 
-// LookupTag will return the value associated with the key and optional tag. See
-// examples for supported formats. The bool reports if the key or tag was
-// explicitly found in the struct tag.
-func (f Field) LookupTag(key, tag string) (string, bool) {
-	value, ok := f.rStructField.Tag.Lookup(key)
-	if !ok {
-		return "", false
-	}
-
-	if tag == "" {
-		return value, true
-	}
-
-	tags := parseStructTag(value)
-	val, ok := tags[tag]
-	return val, ok
-}
-
 // Parse will call the handler against the field and set the field to the
 // returned handler value. If the handler returns nil, no change is made to the
 // field.
