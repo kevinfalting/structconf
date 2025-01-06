@@ -26,7 +26,7 @@ func Parse(ctx context.Context, cfg any, optionFuncs ...optionFunc) error {
 		confhandler.EnvironmentVariable{}.Handle,
 	}
 
-	if opt.useFlags {
+	if opt.flagSet != nil {
 		flagHandler := confhandler.NewFlag(opt.flagSet)
 		if err := flagHandler.DefineFlags(fields); err != nil {
 			return err
@@ -52,8 +52,7 @@ func Parse(ctx context.Context, cfg any, optionFuncs ...optionFunc) error {
 }
 
 type option struct {
-	useFlags bool
-	flagSet  *flag.FlagSet
+	flagSet *flag.FlagSet
 }
 
 type optionFunc func(opt *option)
@@ -63,7 +62,6 @@ type optionFunc func(opt *option)
 // the stdlib flagset.
 func WithFlagSet(fset *flag.FlagSet) optionFunc {
 	return func(opt *option) {
-		opt.useFlags = true
 		opt.flagSet = fset
 	}
 }
